@@ -1,0 +1,79 @@
+package com.randyflix.ui
+
+import android.os.Bundle
+import android.view.View
+import android.widget.Button
+import android.widget.ImageView
+import android.widget.TextView
+import androidx.fragment.app.FragmentActivity
+import com.randyflix.R
+import com.randyflix.data.Library
+import com.randyflix.data.Movie
+import com.randyflix.data.Playback
+
+class MovieActivity : FragmentActivity() {
+    private lateinit var movie: Movie
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        val m = Library.movie(intent.getStringExtra(Nav.EXTRA_ID))
+        if (m == null) {
+            finish()
+            return
+        }
+        movie = m
+        setContentView(R.layout.activity_movie)
+
+        ImageLoader.load(findViewById(R.id.backdrop), m.fanart ?: m.poster, 1280, 0)
+        ImageLoader.load(findViewById<ImageView>(R.id.poster), m.poster, Format.dp(this, 180))
+        findViewById<TextView>(R.id.title).text = m.title
+        findViewById<TextView>(R.id.meta).text = listOfNotNull(
+            m.year?.toString(),
+            Format.minutes(m.runtime),
+            m.mpaa,
+            m.rating?.let { "★ %.1f".format(it) },
+            Format.videoInfo(m.videoCodec, m.height, m.audioCodec),
+        ).joinToString("   ·   ")
+        findViewById<TextView>(R.id.tagline).apply {
+            text = m.tagline
+            visibility = if (m.tagline.isNullOrBlank()) View.GONE else View.VISIBLE
+        }
+        findViewById<TextView>(R.id.plot).text = m.plot ?: "No description available."
+        findViewById<TextView>(R.id.extra).text = listOfNotNull(
+            m.genres.takeIf { it.isNotEmpty() }?.joinToString(", "),
+            m.subtitles.takeIf { it.isNotEmpty() }?.let { s -> "Subtitles: " + s.joinToString(", ") { it.label } },
+        ).joinToString("\n")
+
+        findViewById<Button>(R.id.play).setOnClickListener {
+            Nav.play(this, m.id, Playback.resume(m.id)?.position ?: 0L)
+        }
+        findViewById<Button>(R.id.restart).setOnClickListener { Nav.play(this, m.id, 0L) }
+        findViewById<Button>(R.id.watched).setOnClickListener {
+            Playback.setWatched(m.id, !Playback.isWatched(m.id))
+            bindButtons()
+        }
+        findViewById<Button>(R.id.collection).apply {
+            if (m.collection == null) {
+                visibility = View.GONE
+            } else {
+                text = m.collection
+                setOnClickListener {
+                    startActivity(GridActivity.intent(this@MovieActivity, GridFragment.MODE_COLLECTION + m.collection, m.collection))
+                }
+            }
+        }
+        findViewById<Button>(R.id.play).requestFocus()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (::movie.isInitialized) bindButtons()
+    }
+
+    private fun bindButtons() {
+        val r = Playback.resume(movie.id)
+        findViewById<Button>(R.id.play).text = if (r != null) "Resume (${Format.clock(r.position)})" else "Play"
+        findViewById<Button>(R.id.restart).visibility = if (r != null) View.VISIBLE else View.GONE
+        findViewById<Button>(R.id.watched).text = if (Playback.isWatched(movie.id)) "Mark unwatched" else "Mark watched"
+    }
+}
