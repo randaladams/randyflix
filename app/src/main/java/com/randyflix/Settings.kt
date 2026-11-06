@@ -39,5 +39,10 @@ object Settings {
         get() = str("domain", "")
         set(v) = put("domain", v)
 
+    /** Play the intro clip when the app starts. */
+    var showIntro: Boolean
+        get() = prefs.getBoolean("intro", true)
+        set(v) = prefs.edit().putBoolean("intro", v).apply()
+
     val isConfigured: Boolean get() = prefs.contains("host")
 }

@@ -62,6 +62,15 @@ class SettingsActivity : FragmentActivity() {
             ImageLoader.clearCache(this)
             status.text = "Artwork cache cleared."
         }
+        val intro = findViewById<Button>(R.id.intro)
+        fun showIntroState() {
+            intro.text = if (Settings.showIntro) "Intro on startup: On" else "Intro on startup: Off"
+        }
+        showIntroState()
+        intro.setOnClickListener {
+            Settings.showIntro = !Settings.showIntro
+            showIntroState()
+        }
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {

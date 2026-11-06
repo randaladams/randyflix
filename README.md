@@ -6,6 +6,7 @@ A small, self-contained Fire TV app for browsing and playing my own movie and TV
 - Uses tinyMediaManager / Kodi `.nfo` files and local artwork when present. Otherwise it falls back to folder names, such as `Aliens (1986)`.
 - Keeps the library index on the Firestick and refreshes it once a day or on demand. Refreshes are incremental, so only folders that changed get rescanned.
 - Plays with ExoPlayer (Media3): mp4, m4v, mkv, webm, ts and most avi files. It picks up `.srt`, `.ass` and `.vtt` subtitles next to the video, or in a `Subs` folder, plus subtitles embedded in mkv files.
+- Plays a short intro clip (`app/src/main/res/raw/intro.mp4`) on startup. Any button skips it, and Settings can turn it off.
 - Remembers where you stopped, marks things watched, shows Continue Watching and Next Up, and plays the next episode automatically.
 
 ## Expected library layout
