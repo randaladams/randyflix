@@ -119,7 +119,16 @@ class PlayerMenu(private val activity: FragmentActivity, private val onClosed: (
                 }
             })
         }
-        val target = list.getChildAt(focus.coerceIn(0, maxOf(0, list.childCount - 1)))
+        // Keep focus inside the panel: Left/Right stay put, Up/Down wrap around the ends.
+        val n = list.childCount
+        val ids = IntArray(n) { View.generateViewId().also { id -> list.getChildAt(it).id = id } }
+        for (i in 0 until n) list.getChildAt(i).apply {
+            nextFocusLeftId = ids[i]
+            nextFocusRightId = ids[i]
+            nextFocusUpId = ids[(i - 1 + n) % n]
+            nextFocusDownId = ids[(i + 1) % n]
+        }
+        val target = list.getChildAt(focus.coerceIn(0, maxOf(0, n - 1)))
         target?.post { target.requestFocus() }
     }
 
@@ -138,23 +147,33 @@ class PlayerMenu(private val activity: FragmentActivity, private val onClosed: (
                 .apply { bottomMargin = Format.dp(activity, 8) }
         }
 
-    /**
-     * Key handling for the activity. Returns true if the key was consumed here, false if the
-     * activity should handle it as usual. ☰ opens/closes on key-up, so one press does one thing.
-     */
-    fun dispatchKey(event: KeyEvent, openMenu: () -> Unit): Boolean {
+    /** What the activity should do with a key after [dispatchKey]. */
+    enum class Key {
+        /** Handled here (☰, or Back while open). */
+        CONSUMED,
+        /**
+         * The panel is open: skip the player's own key handling and let the window handle it
+         * normally. This must not be marked as handled, because Android only moves D-pad focus
+         * between buttons for keys nobody consumed.
+         */
+        TO_PANEL,
+        /** The panel is closed: handle as usual. */
+        NOT_MINE,
+    }
+
+    /** ☰ opens/closes on key-up, so one press does one thing. */
+    fun dispatchKey(event: KeyEvent, openMenu: () -> Unit): Key {
         val code = event.keyCode
         if (code == KeyEvent.KEYCODE_MENU) {
             if (event.action == KeyEvent.ACTION_UP) { if (isOpen) close() else openMenu() }
-            return true
+            return Key.CONSUMED
         }
-        if (!isOpen) return false
+        if (!isOpen) return Key.NOT_MINE
         if (code == KeyEvent.KEYCODE_BACK) {
             if (event.action == KeyEvent.ACTION_UP) back()
-            return true
+            return Key.CONSUMED
         }
-        // Everything else goes to the panel's buttons, not the player.
-        return activity.window.superDispatchKeyEvent(event) || true
+        return Key.TO_PANEL
     }
 }
 

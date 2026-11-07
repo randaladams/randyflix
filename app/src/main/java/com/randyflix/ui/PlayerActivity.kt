@@ -223,7 +223,11 @@ class PlayerActivity : FragmentActivity() {
      */
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         val p = player
-        if (p != null && menu.dispatchKey(event) { openMenu() }) return true
+        if (p != null) when (menu.dispatchKey(event) { openMenu() }) {
+            PlayerMenu.Key.CONSUMED -> return true
+            PlayerMenu.Key.TO_PANEL -> return super.dispatchKeyEvent(event)
+            PlayerMenu.Key.NOT_MINE -> {}
+        }
         // Repeated presses keep seeking while the controls are only up because of a seek.
         val seeking = !playerView.isControllerFullyVisible || seekFlash
         if (p != null && event.action == KeyEvent.ACTION_DOWN && seeking) {

@@ -188,7 +188,11 @@ class LiveActivity : FragmentActivity() {
 
     /** Up/Down (or Channel +/-) change channel while the controls are hidden; ☰ opens the panel. */
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        if (player != null && menu.dispatchKey(event) { openMenu() }) return true
+        if (player != null) when (menu.dispatchKey(event) { openMenu() }) {
+            PlayerMenu.Key.CONSUMED -> return true
+            PlayerMenu.Key.TO_PANEL -> return super.dispatchKeyEvent(event)
+            PlayerMenu.Key.NOT_MINE -> {}
+        }
         if (player != null && event.action == KeyEvent.ACTION_DOWN && !playerView.isControllerFullyVisible) {
             when (event.keyCode) {
                 KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_CHANNEL_UP -> { tune(index - 1); return true }
