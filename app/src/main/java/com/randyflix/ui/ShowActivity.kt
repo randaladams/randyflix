@@ -11,7 +11,6 @@ import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.core.content.ContextCompat
-import androidx.fragment.app.FragmentActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.randyflix.R
@@ -21,7 +20,7 @@ import com.randyflix.data.Playback
 import com.randyflix.data.Show
 
 /** Show details: season tabs across the top, episode list below. */
-class ShowActivity : FragmentActivity() {
+class ShowActivity : TvActivity() {
     private lateinit var show: Show
     private lateinit var recycler: RecyclerView
     private val adapter = EpisodeAdapter()

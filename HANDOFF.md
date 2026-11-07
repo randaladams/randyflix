@@ -95,6 +95,7 @@ com/randyflix/
   ui/SettingsActivity            settings + connection test
   ui/Screen.kt                   ClockView + daily background, added to each menu screen
   ui/PlayerMenu.kt               ☰ side panel for both players; TrackChoice = CC on/off, caption/audio language
+  ui/ScreenSaver.kt              screen saver slideshow + TvActivity (base for menu screens and the player)
   ui/CardPresenter, ImageLoader, Nav, Format   shared UI helpers
 ```
 

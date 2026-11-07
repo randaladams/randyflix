@@ -48,6 +48,11 @@ object Settings {
         get() = prefs.getBoolean("clock24", false)
         set(v) = prefs.edit().putBoolean("clock24", v).apply()
 
+    /** Minutes without a button press before the screen saver starts; 0 = never. */
+    var screenSaverMinutes: Int
+        get() = prefs.getInt("saver_min", 10)
+        set(v) = prefs.edit().putInt("saver_min", v).apply()
+
     /** All channels list order: most watched first instead of by name. */
     var channelsByUse: Boolean
         get() = prefs.getBoolean("chsort_use", false)

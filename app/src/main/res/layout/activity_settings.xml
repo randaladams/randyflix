@@ -1,78 +1,131 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Settings: section list on the left (sorted by name), the chosen section on the right,
+     status bar along the bottom. Sections are shown/hidden by SettingsActivity. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-<ScrollView
-    android:layout_width="match_parent"
-    android:layout_height="0dp"
-    android:layout_weight="1">
-
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:orientation="horizontal"
         android:paddingLeft="48dp"
-        android:paddingTop="32dp"
+        android:paddingTop="64dp"
         android:paddingRight="48dp"
-        android:paddingBottom="32dp">
+        android:paddingBottom="24dp">
 
+        <!-- Left: sections -->
         <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
+            android:id="@+id/nav"
+            android:layout_width="240dp"
+            android:layout_height="match_parent"
             android:orientation="vertical">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
                 android:text="Settings"
                 android:textColor="@color/text_primary"
                 android:textSize="28sp"
                 android:textStyle="bold" />
 
-            <TextView style="@style/FieldLabel" android:text="Server (Pi hostname or IP address)" />
-            <EditText android:id="@+id/host" style="@style/Field" android:hint="adamsnas" />
-
-            <TextView style="@style/FieldLabel" android:text="Movies folder (share name, optionally /subfolder)" />
-            <EditText android:id="@+id/movies" style="@style/Field" android:hint="movies" />
-
-            <TextView style="@style/FieldLabel" android:text="TV shows folder" />
-            <EditText android:id="@+id/tv" style="@style/Field" android:hint="tv" />
-
-            <TextView style="@style/FieldLabel" android:text="RandyFlix folder (channels.m3u and backgrounds/; blank = off)" />
-            <EditText android:id="@+id/app_folder" style="@style/Field" android:hint="movies/_randyflix" />
+            <Button android:id="@+id/nav_about" style="@style/NavButton" android:text="About" />
+            <Button android:id="@+id/nav_clock" style="@style/NavButton" android:text="Clock" />
+            <Button android:id="@+id/nav_connection" style="@style/NavButton" android:text="Connection" />
+            <Button android:id="@+id/nav_library" style="@style/NavButton" android:text="Library" />
+            <Button android:id="@+id/nav_live" style="@style/NavButton" android:text="Live TV" />
+            <Button android:id="@+id/nav_playback" style="@style/NavButton" android:text="Playback" />
+            <Button android:id="@+id/nav_saver" style="@style/NavButton" android:text="Screen saver" />
         </LinearLayout>
 
-        <LinearLayout
+        <View
+            android:layout_width="1dp"
+            android:layout_height="match_parent"
+            android:layout_marginStart="24dp"
+            android:layout_marginEnd="32dp"
+            android:background="#33FFFFFF" />
+
+        <!-- Right: the selected section -->
+        <ScrollView
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="40dp"
-            android:layout_weight="1"
-            android:orientation="vertical">
+            android:layout_height="match_parent"
+            android:layout_weight="1">
 
-            <TextView
-                android:id="@+id/version"
+            <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="52dp"
-                android:gravity="end|center_vertical"
-                android:textColor="@color/text_dim"
-                android:textSize="12sp" />
+                android:layout_height="wrap_content">
 
-            <Button android:id="@+id/save" style="@style/TvButton" android:layout_marginBottom="12dp" android:text="Save and test connection" />
-            <Button android:id="@+id/refresh" style="@style/TvButton" android:layout_marginBottom="12dp" android:text="Refresh library (changes only)" />
-            <Button android:id="@+id/full" style="@style/TvButton" android:layout_marginBottom="12dp" android:text="Full rescan" />
-            <Button android:id="@+id/clear_images" style="@style/TvButton" android:layout_marginBottom="12dp" android:text="Clear artwork cache" />
-            <Button android:id="@+id/intro" style="@style/TvButton" android:layout_marginBottom="12dp" android:text="Intro on startup: On" />
-            <Button android:id="@+id/autoplay" style="@style/TvButton" android:layout_marginBottom="12dp" android:text="Auto-play next episode: On" />
-            <Button android:id="@+id/clock" style="@style/TvButton" android:layout_marginBottom="12dp" android:text="Clock: 12-hour" />
-            <Button android:id="@+id/channel_order" style="@style/TvButton" android:layout_marginBottom="12dp" android:text="All channels order: By name" />
-            <Button android:id="@+id/reset_favorites" style="@style/TvButton" android:layout_marginBottom="12dp" android:text="Reset Live TV favorites to the playlist" />
+                <LinearLayout android:id="@+id/sec_about" style="@style/SettingsSection">
+                    <TextView style="@style/SectionTitle" android:text="About" />
+                    <TextView
+                        android:id="@+id/version"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/text_primary"
+                        android:textSize="18sp" />
+                    <TextView
+                        android:id="@+id/about_text"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:focusable="true"
+                        android:lineSpacingExtra="3dp"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="15sp" />
+                </LinearLayout>
 
-        </LinearLayout>
+                <LinearLayout android:id="@+id/sec_clock" style="@style/SettingsSection">
+                    <TextView style="@style/SectionTitle" android:text="Clock" />
+                    <TextView style="@style/SectionHint" android:text="Date and time shown at the top of the menus and the pause screen." />
+                    <Button android:id="@+id/clock" style="@style/TvButton" android:text="Clock: 12-hour" />
+                </LinearLayout>
+
+                <LinearLayout android:id="@+id/sec_connection" style="@style/SettingsSection">
+                    <TextView style="@style/SectionTitle" android:text="Connection" />
+                    <TextView style="@style/FieldLabel" android:text="Server (Pi hostname or IP address)" />
+                    <EditText android:id="@+id/host" style="@style/Field" android:hint="adamsnas" />
+                    <TextView style="@style/FieldLabel" android:text="Movies folder (share name, optionally /subfolder)" />
+                    <EditText android:id="@+id/movies" style="@style/Field" android:hint="movies" />
+                    <TextView style="@style/FieldLabel" android:text="TV shows folder" />
+                    <EditText android:id="@+id/tv" style="@style/Field" android:hint="tv" />
+                    <TextView style="@style/FieldLabel" android:text="RandyFlix folder (channels.m3u and backgrounds/; blank = off)" />
+                    <EditText android:id="@+id/app_folder" style="@style/Field" android:hint="movies/_randyflix" />
+                    <Button android:id="@+id/save" style="@style/TvButton" android:layout_marginTop="20dp" android:text="Save and test connection" />
+                </LinearLayout>
+
+                <LinearLayout android:id="@+id/sec_library" style="@style/SettingsSection">
+                    <TextView style="@style/SectionTitle" android:text="Library" />
+                    <Button android:id="@+id/refresh" style="@style/StackButton" android:text="Refresh library (changes only)" />
+                    <Button android:id="@+id/full" style="@style/StackButton" android:text="Full rescan" />
+                    <Button android:id="@+id/clear_images" style="@style/StackButton" android:text="Clear artwork cache" />
+                </LinearLayout>
+
+                <LinearLayout android:id="@+id/sec_live" style="@style/SettingsSection">
+                    <TextView style="@style/SectionTitle" android:text="Live TV" />
+                    <Button android:id="@+id/channel_order" style="@style/StackButton" android:text="All channels order: By name" />
+                    <Button android:id="@+id/reset_favorites" style="@style/StackButton" android:text="Reset Live TV favorites to the playlist" />
+                </LinearLayout>
+
+                <LinearLayout android:id="@+id/sec_playback" style="@style/SettingsSection">
+                    <TextView style="@style/SectionTitle" android:text="Playback" />
+                    <Button android:id="@+id/autoplay" style="@style/StackButton" android:text="Auto-play next episode: On" />
+                    <Button android:id="@+id/intro" style="@style/StackButton" android:text="Intro on startup: On" />
+                </LinearLayout>
+
+                <LinearLayout android:id="@+id/sec_saver" style="@style/SettingsSection">
+                    <TextView style="@style/SectionTitle" android:text="Screen saver" />
+                    <TextView style="@style/SectionHint" android:text="A slideshow of the background pictures, on the menus or when a movie or show is paused. Any button wakes it." />
+                    <Button android:id="@+id/saver_3" style="@style/StackButton" android:text="3 minutes" />
+                    <Button android:id="@+id/saver_10" style="@style/StackButton" android:text="10 minutes" />
+                    <Button android:id="@+id/saver_30" style="@style/StackButton" android:text="30 minutes" />
+                    <Button android:id="@+id/saver_never" style="@style/StackButton" android:text="Never" />
+                </LinearLayout>
+            </FrameLayout>
+        </ScrollView>
     </LinearLayout>
-</ScrollView>
 
     <!-- Status bar: scan progress and connection test results. -->
     <TextView

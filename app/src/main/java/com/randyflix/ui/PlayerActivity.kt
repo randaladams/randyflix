@@ -9,7 +9,6 @@ import android.view.View
 import android.view.WindowManager
 import android.widget.Toast
 import androidx.annotation.OptIn
-import androidx.fragment.app.FragmentActivity
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
@@ -38,7 +37,11 @@ import com.randyflix.smb.SmbDataSource
  * position every 10 seconds and on exit.
  */
 @OptIn(UnstableApi::class)
-class PlayerActivity : FragmentActivity() {
+class PlayerActivity : TvActivity() {
+    // Screen saver only while paused (and not while the ☰ panel is open). The player keeps the screen on itself.
+    override fun saverAllowed() = player?.playWhenReady == false && !menu.isOpen
+    override val saverHoldsScreenOn = false
+
     private lateinit var playerView: PlayerView
     private var player: ExoPlayer? = null
     private var currentId: String? = null   // episode being played, or the movie (for every disc)
@@ -135,6 +138,7 @@ class PlayerActivity : FragmentActivity() {
 
             override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
                 updateClock()
+                saverPoke()   // the countdown starts when playback pauses
             }
 
             override fun onTracksChanged(tracks: Tracks) {
@@ -222,6 +226,7 @@ class PlayerActivity : FragmentActivity() {
      * the controls just long enough to see the new time. Other buttons show them a little longer.
      */
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (saverKey(event)) return true
         val p = player
         if (p != null) when (menu.dispatchKey(event) { openMenu() }) {
             PlayerMenu.Key.CONSUMED -> return true

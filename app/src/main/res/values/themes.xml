@@ -28,6 +28,47 @@
         <item name="android:stateListAnimator">@null</item>
     </style>
 
+    <!-- Settings: left-hand section list -->
+    <style name="NavButton" parent="TvButton">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_marginEnd">0dp</item>
+        <item name="android:layout_marginBottom">8dp</item>
+        <item name="android:gravity">start|center_vertical</item>
+        <item name="android:background">@drawable/nav_bg</item>
+    </style>
+
+    <!-- Settings: a full-width button in a section -->
+    <style name="StackButton" parent="TvButton">
+        <item name="android:layout_marginEnd">0dp</item>
+        <item name="android:layout_marginBottom">12dp</item>
+        <item name="android:minWidth">320dp</item>
+        <item name="android:gravity">start|center_vertical</item>
+    </style>
+
+    <style name="SettingsSection">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:visibility">gone</item>
+    </style>
+
+    <style name="SectionTitle">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginBottom">12dp</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textSize">22sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="SectionHint">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginBottom">16dp</item>
+        <item name="android:textColor">@color/text_secondary</item>
+        <item name="android:textSize">14sp</item>
+    </style>
+
     <style name="FieldLabel">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">wrap_content</item>

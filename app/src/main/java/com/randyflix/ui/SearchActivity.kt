@@ -5,11 +5,10 @@ import android.view.KeyEvent
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
-import androidx.fragment.app.FragmentActivity
 import com.randyflix.R
 import com.randyflix.data.Library
 
-class SearchActivity : FragmentActivity() {
+class SearchActivity : TvActivity() {
     private lateinit var grid: GridFragment
 
     override fun onCreate(savedInstanceState: Bundle?) {

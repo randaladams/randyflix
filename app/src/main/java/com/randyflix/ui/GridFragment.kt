@@ -5,7 +5,6 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.KeyEvent
 import androidx.core.os.bundleOf
-import androidx.fragment.app.FragmentActivity
 import androidx.leanback.app.VerticalGridSupportFragment
 import androidx.leanback.widget.ArrayObjectAdapter
 import androidx.leanback.widget.FocusHighlight
@@ -77,7 +76,7 @@ class GridFragment : VerticalGridSupportFragment() {
     }
 }
 
-class GridActivity : FragmentActivity() {
+class GridActivity : TvActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_container)

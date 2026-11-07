@@ -6,13 +6,12 @@ import android.view.View
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
-import androidx.fragment.app.FragmentActivity
 import com.randyflix.R
 import com.randyflix.data.Library
 import com.randyflix.data.Movie
 import com.randyflix.data.Playback
 
-class MovieActivity : FragmentActivity() {
+class MovieActivity : TvActivity() {
     private lateinit var movie: Movie
 
     override fun onCreate(savedInstanceState: Bundle?) {

@@ -1,10 +1,11 @@
 package com.randyflix.ui
 
 import android.os.Bundle
+import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
-import androidx.fragment.app.FragmentActivity
+import android.view.View
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -21,7 +22,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class SettingsActivity : FragmentActivity() {
+class SettingsActivity : TvActivity() {
     private lateinit var status: TextView
     private lateinit var clock: ClockView
 
@@ -45,6 +46,12 @@ class SettingsActivity : FragmentActivity() {
         @Suppress("DEPRECATION")
         val version = packageManager.getPackageInfo(packageName, 0).versionName
         findViewById<TextView>(R.id.version).text = "RandyFlix $version"
+        findViewById<TextView>(R.id.about_text).text =
+            "Plays the movie and TV library on ${Settings.host} over the network, plus Live TV and " +
+                "background pictures from the RandyFlix folder (${Settings.appFolder.ifBlank { "off" }}).
+
+" +
+                "Library: ${Library.data.movies.size} movies, ${Library.data.shows.size} TV shows."
 
         findViewById<Button>(R.id.save).setOnClickListener {
             // The app folder (playlist, backgrounds) isn't part of the library index, so changing it needs no full rescan.
@@ -121,7 +128,68 @@ class SettingsActivity : FragmentActivity() {
                 }
             }
         }
-        host.requestFocus()
+        val saverButtons = listOf(R.id.saver_3 to 3, R.id.saver_10 to 10, R.id.saver_30 to 30, R.id.saver_never to 0)
+        fun showSaverState() {
+            for ((id, min) in saverButtons) {
+                val label = if (min == 0) "Never" else "$min minutes"
+                findViewById<Button>(id).text = (if (Settings.screenSaverMinutes == min) "✓  " else "     ") + label
+            }
+        }
+        showSaverState()
+        for ((id, min) in saverButtons) findViewById<Button>(id).setOnClickListener {
+            Settings.screenSaverMinutes = min
+            showSaverState()
+            saverSettingsChanged()
+            status.text = if (min == 0) "Screen saver off." else "Screen saver after $min minutes without a button press."
+        }
+
+        setUpSections(first = if (Settings.isConfigured) R.id.nav_about else R.id.nav_connection)
+    }
+
+    /**
+     * Left list of sections (sorted by name): moving onto one shows it on the right; Select or
+     * Right moves into it, and Left from inside comes back to its entry in the list.
+     */
+    private fun setUpSections(first: Int) {
+        val sections = listOf(
+            R.id.nav_about to R.id.sec_about,
+            R.id.nav_clock to R.id.sec_clock,
+            R.id.nav_connection to R.id.sec_connection,
+            R.id.nav_library to R.id.sec_library,
+            R.id.nav_live to R.id.sec_live,
+            R.id.nav_playback to R.id.sec_playback,
+            R.id.nav_saver to R.id.sec_saver,
+        )
+        fun show(nav: Int) {
+            for ((n, sec) in sections) {
+                findViewById<View>(sec).visibility = if (n == nav) View.VISIBLE else View.GONE
+                findViewById<View>(n).isActivated = n == nav
+            }
+            // Left from anything in the section returns to this entry in the list.
+            val section = findViewById<ViewGroup>(sections.first { it.first == nav }.second)
+            focusables(section).forEach { it.nextFocusLeftId = nav }
+        }
+        for ((nav, sec) in sections) {
+            val button = findViewById<View>(nav)
+            button.setOnFocusChangeListener { _, has -> if (has) show(nav) }
+            button.setOnClickListener {
+                show(nav)
+                focusables(findViewById(sec)).firstOrNull()?.requestFocus()
+            }
+            button.nextFocusRightId = View.NO_ID
+        }
+        show(first)
+        findViewById<View>(first).requestFocus()
+    }
+
+    private fun focusables(group: ViewGroup): List<View> {
+        val out = ArrayList<View>()
+        for (i in 0 until group.childCount) {
+            val v = group.getChildAt(i)
+            if (v.isFocusable && v.visibility == View.VISIBLE) out += v
+            if (v is ViewGroup) out += focusables(v)
+        }
+        return out
     }
 
     private fun testConnection(scanAfter: Boolean, full: Boolean) {

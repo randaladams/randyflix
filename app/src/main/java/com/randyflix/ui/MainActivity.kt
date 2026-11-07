@@ -7,7 +7,6 @@ import android.view.KeyEvent
 import android.view.View
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
-import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -21,7 +20,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
-class MainActivity : FragmentActivity() {
+class MainActivity : TvActivity() {
     private var shown: ScanState? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {

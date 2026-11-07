@@ -56,6 +56,9 @@ object Backgrounds {
         }
     }
 
+    /** Every picture, in name order (for the screen saver). */
+    fun all(): List<String> = images
+
     /** Called when a screen comes up, so an app left open past midnight still changes picture. */
     fun check() {
         if (today() != day) pick()
