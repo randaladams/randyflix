@@ -56,10 +56,12 @@ A sideloaded Fire TV app for browsing and playing my own movie and TV library, s
 ## 5. How scanning works (quick reference)
 
 - **Movies root:** each subfolder is one movie, and the largest video file in it wins. Files with sample/trailer in the name are skipped when other videos are present. A folder with no video is treated as a collection folder and scanned one level deeper. A video sitting directly in the root counts as a movie too.
-- **Movie artwork lookup order:**
-  - Poster: `<base>-poster.jpg` → `poster.jpg` → `folder.jpg` → `cover.jpg`
-  - Fanart: `<base>-fanart.jpg` → `fanart.jpg` → `backdrop.jpg`
-  - NFO: `<base>.nfo` → `movie.nfo` → any `.nfo`
+- **Multi-disc movies:** videos in one folder named `<same name> Disc 1/Disc1/CD1/Part 1/pt1/...` become one movie with `parts`, played in order. The resume point stores which disc (`Resume.part`); the movie counts as watched only after the last disc. Two videos with no disc marker (e.g. an .m4v and an .mp4 of the same film): the largest wins.
+- **Movie artwork lookup order** (`<base>` = video name, `<folder>` = folder name):
+  - Poster: `<base>-poster.jpg` → `<folder>-poster.jpg` → `poster.jpg` → `folder.jpg` → `cover.jpg` → any `*-poster.jpg`
+  - Fanart: `<base>-fanart.jpg` → `<folder>-fanart.jpg` → `fanart.jpg` → `backdrop.jpg` → any `*-fanart.jpg`
+  - NFO: `<base>.nfo` → `<folder>.nfo` → `movie.nfo` → any `.nfo`
+- **Index format:** `LibraryJson.VERSION` (in `Models.kt`). Bump it when the scanner learns something new; existing installs then do one full rescan automatically.
 - **TV:** season folders are matched by name: `Season N`, `SN`, `Specials`, or a bare number. Episode numbers come from `S01E02` or `1x02` in the file name, and the episode `.nfo` overrides them. Episode thumbnails: `<base>-thumb.jpg`, otherwise the `.nfo`'s `<thumb>` URL. Season posters: `seasonNN-poster.jpg`.
 - **Subtitles:** `.srt`, `.ass`, `.ssa` and `.vtt` files whose name starts with the video's name. The language comes from tags like `.en.` or `.eng.`, and `forced` and `sdh` are recognized. A `Subs/` or `Subtitles/` subfolder is also checked. `.sub/.idx` subtitles aren't supported.
 - **Ignored folders:** names starting with `.`, `@`, `$`, `#` or `_` (e.g. `_work`), plus `Extras`, `Featurettes`, `VIDEO_TS` and `BDMV`.
