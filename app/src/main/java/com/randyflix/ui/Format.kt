@@ -32,6 +32,10 @@ object Format {
     fun resumePoint(r: Playback.Resume): String =
         if (r.part > 0) "disc ${r.part + 1}, ${clock(r.position)}" else clock(r.position)
 
+    /** "0:42:10", or "Disc 2 · 0:42:10" for a multi-disc movie. */
+    fun bookmark(b: Playback.Bookmark, multiDisc: Boolean): String =
+        if (multiDisc) "Disc ${b.part + 1} · ${clock(b.position)}" else clock(b.position)
+
     /** Playback status of a single video, for cards and lists. */
     fun status(id: String): String? {
         if (Playback.isWatched(id)) return "✓ Watched"

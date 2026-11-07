@@ -12,6 +12,7 @@ import com.randyflix.R
 import com.randyflix.Settings
 import com.randyflix.data.Library
 import com.randyflix.data.LiveTv
+import com.randyflix.data.Backgrounds
 import com.randyflix.data.M3u
 import com.randyflix.data.ScanState
 import com.randyflix.data.Scanner
@@ -22,35 +23,38 @@ import kotlinx.coroutines.withContext
 
 class SettingsActivity : FragmentActivity() {
     private lateinit var status: TextView
+    private lateinit var clock: ClockView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_settings)
         status = findViewById(R.id.status)
+        Screen.background(this)
+        clock = Screen.clock(this)
 
         val host = findViewById<EditText>(R.id.host)
         val movies = findViewById<EditText>(R.id.movies)
         val tv = findViewById<EditText>(R.id.tv)
-        val live = findViewById<EditText>(R.id.live)
+        val appFolder = findViewById<EditText>(R.id.app_folder)
 
         host.setText(Settings.host)
         movies.setText(Settings.moviesPath)
         tv.setText(Settings.tvPath)
-        live.setText(Settings.livePath)
+        appFolder.setText(Settings.appFolder)
 
         @Suppress("DEPRECATION")
         val version = packageManager.getPackageInfo(packageName, 0).versionName
         findViewById<TextView>(R.id.version).text = "RandyFlix $version"
 
         findViewById<Button>(R.id.save).setOnClickListener {
-            // The Live TV playlist isn't part of the library index, so changing it needs no full rescan.
+            // The app folder (playlist, backgrounds) isn't part of the library index, so changing it needs no full rescan.
             val pathsChanged = host.text.toString().trim() != Settings.host ||
                 movies.text.toString().trim('/', '\\', ' ') != Settings.moviesPath ||
                 tv.text.toString().trim('/', '\\', ' ') != Settings.tvPath
             Settings.host = host.text.toString()
             Settings.moviesPath = movies.text.toString()
             Settings.tvPath = tv.text.toString()
-            Settings.livePath = live.text.toString()
+            Settings.appFolder = appFolder.text.toString()
             testConnection(scanAfter = true, full = pathsChanged)
         }
         findViewById<Button>(R.id.refresh).setOnClickListener { Library.scan(false) }
@@ -76,6 +80,33 @@ class SettingsActivity : FragmentActivity() {
         autoplay.setOnClickListener {
             Settings.autoPlayNext = !Settings.autoPlayNext
             showAutoplayState()
+        }
+        val clockButton = findViewById<Button>(R.id.clock)
+        fun showClockState() {
+            clockButton.text = if (Settings.clock24) "Clock: 24-hour" else "Clock: 12-hour"
+            clock.update()
+        }
+        showClockState()
+        clockButton.setOnClickListener {
+            Settings.clock24 = !Settings.clock24
+            showClockState()
+        }
+        val order = findViewById<Button>(R.id.channel_order)
+        fun showOrderState() {
+            order.text = if (Settings.channelsByUse) "All channels order: Most watched" else "All channels order: By name"
+        }
+        showOrderState()
+        order.setOnClickListener {
+            Settings.channelsByUse = !Settings.channelsByUse
+            showOrderState()
+        }
+        findViewById<Button>(R.id.reset_favorites).setOnClickListener {
+            if (LiveTv.hasCustomFavorites) {
+                LiveTv.resetFavorites()
+                status.text = "Live TV favorites reset to the playlist's Favorites section."
+            } else {
+                status.text = "Live TV favorites already come from the playlist."
+            }
         }
 
         lifecycleScope.launch {
@@ -110,12 +141,21 @@ class SettingsActivity : FragmentActivity() {
                         }
                     }
                     // A missing playlist only turns Live TV off, so it doesn't stop the library scan.
-                    Settings.livePath.takeIf { it.isNotBlank() }?.let { path ->
+                    Settings.livePlaylist.takeIf { it.isNotBlank() }?.let { path ->
                         lines += try {
                             val text = Smb.readBytes(path).toString(Charsets.UTF_8)
-                            "✓ Live TV ($path): ${M3u.parse(text, "").size} channels"
+                            val channels = M3u.parse(text, "")
+                            "✓ Live TV ($path): ${channels.size} channels, ${channels.count { it.inFavorites }} in Favorites"
                         } catch (e: Exception) {
                             "⚠ Live TV ($path): ${Scanner.describe(e)}"
+                        }
+                    }
+                    Settings.backgroundsFolder.takeIf { it.isNotBlank() }?.let { path ->
+                        lines += try {
+                            val n = Smb.list(path).count { !it.isDir && it.name.substringAfterLast('.').lowercase() in setOf("jpg", "jpeg", "png", "webp") }
+                            "✓ Backgrounds ($path): $n pictures"
+                        } catch (e: Exception) {
+                            "⚠ Backgrounds ($path): ${Scanner.describe(e)}"
                         }
                     }
                     lines.joinToString("\n")
@@ -125,6 +165,7 @@ class SettingsActivity : FragmentActivity() {
             }
             status.text = result
             LiveTv.refresh()
+            Backgrounds.refresh()
             if (scanAfter && !result.contains("✗")) Library.scan(full)
         }
     }

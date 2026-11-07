@@ -22,7 +22,7 @@ A sideloaded Fire TV app for browsing and playing my own movie and TV library, s
 - **Home screen:** Continue Watching (in-progress items plus the next episode of each show I'm watching), a Browse row (Movies, TV Shows, Search, Refresh Library, Settings), Recently Added Movies, and Recently Updated Shows.
 - **Movies:** an A–Z poster grid. Each movie page has fanart, poster, plot, rating, runtime, codec info, the subtitle list, Play/Resume, Start over, Mark watched, and a link to its collection.
 - **TV:** season tabs and an episode list with thumbnails and progress bars. It opens on the next unwatched episode. Holding Select marks an episode or a whole season watched.
-- **Player:** streams over SMB. Supports sidecar and embedded subtitles, an audio-track picker, Left/Right for back 10 s / forward 30 s, resume saved every 10 s, and auto-play of the next episode.
+- **Player:** streams over SMB. Supports sidecar and embedded subtitles, an audio-track picker, Left/Right for back 10 s / forward 30 s, resume saved every 10 s, and auto-play of the next episode. ☰ opens a menu with bookmarks, subtitles and audio language.
 - **Intro:** `res/raw/intro.mp4` (2.2 s, 720p H.264/AAC, made in Clipchamp) plays once at startup. Any button skips it, and Settings can turn it off.
 - **Settings:** server, share paths (guest access only, no credentials), Save and test, Refresh, Full rescan, Clear artwork cache, and the intro toggle.
 
@@ -84,7 +84,8 @@ com/randyflix/
   data/Scanner.kt                library scan (incremental), name/episode parsing
   data/Library.kt                in-memory index, scan job, queries (continue watching, next up, search)
   data/Playback.kt               resume positions and watched marks
-  data/Live.kt                   Channel, M3U parser, LiveTv (playlist from the share, cached in filesDir/live.m3u)
+  data/Live.kt                   Channel, M3U parser (#SECTION), LiveTv (playlist, favorites, watch counts)
+  data/Backgrounds.kt            daily menu background from <app folder>/backgrounds
   ui/IntroActivity.kt            startup clip
   ui/MainActivity + MainFragment home rows
   ui/GridFragment (+GridActivity) poster grids: movies, shows, collections, search results
@@ -92,6 +93,7 @@ com/randyflix/
   ui/PlayerActivity              playback, queueing, resume, error dialog
   ui/LiveActivity                live TV: Up/Down channel change, channel banner
   ui/SettingsActivity            settings + connection test
+  ui/Screen.kt                   ClockView + daily background, added to each menu screen
   ui/CardPresenter, ImageLoader, Nav, Format   shared UI helpers
 ```
 
@@ -101,7 +103,8 @@ com/randyflix/
 2. Time the first full scan on the real library, and make sure posters, plots and episodes all look right.
 3. Check playback of the different formats in the library. Expected trouble: **DTS or TrueHD audio** and old **DivX/Xvid AVI** files. If that's an issue, options are the Media3 FFmpeg audio extension (needs a native build step in CI) or an "Open in VLC" fallback.
 4. Possible later features (none started): genre rows or filters, sort options, the Pi-side indexer (only if needed), a "next episode" countdown, and a Live TV program guide (Now/Next from XMLTV).
-5. **Live TV** (added 2026-11-06): playlist at `\\adamsnas\MOVIES\_live\channels.m3u` with 5 Brazilian novela channels picked from https://iptv-org.github.io/iptv/countries/br.m3u. Globo, Record and Band returned 403 from this network (likely Brazil-only). Not yet tested on the Firestick.
+5. **Live TV** (added 2026-11-06): playlist at `\\adamsnas\MOVIES\_randyflix\channels.m3u` with 6 Brazilian channels (novelas, SBT, CNN Brasil) picked from https://iptv-org.github.io/iptv/countries/br.m3u. Globo, Record and Band returned 403 from this network (likely Brazil-only). Not yet tested on the Firestick.
+6. **Added 2026-11-07** (not yet tested on the Firestick): clock on menu screens and the pause screen; daily backgrounds from `_randyflix\backgrounds`; Live TV Favorites (`#SECTION:Favorites`, max 5, editable with ☰, stored in the `live` prefs) and an All channels grid (by name or most watched); ☰ player menu with bookmarks (`b:<id>` in the playback prefs), subtitle and audio choice; exit confirmation on the home screen. The old `_live` folder was renamed to `_randyflix`.
 
 ## 8. Moving to a new machine
 

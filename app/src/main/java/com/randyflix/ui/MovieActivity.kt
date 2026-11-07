@@ -1,5 +1,6 @@
 package com.randyflix.ui
 
+import android.app.AlertDialog
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
@@ -50,6 +51,7 @@ class MovieActivity : FragmentActivity() {
             Nav.play(this, m.id, r?.position ?: 0L, r?.part ?: 0)
         }
         findViewById<Button>(R.id.restart).setOnClickListener { Nav.play(this, m.id, 0L) }
+        findViewById<Button>(R.id.bookmarks).setOnClickListener { showBookmarks() }
         findViewById<Button>(R.id.watched).setOnClickListener {
             Playback.setWatched(m.id, !Playback.isWatched(m.id))
             bindButtons()
@@ -65,6 +67,20 @@ class MovieActivity : FragmentActivity() {
             }
         }
         findViewById<Button>(R.id.play).requestFocus()
+        Screen.clock(this)
+    }
+
+    /** Pick a bookmark to play from (Menu button in the player adds them). */
+    private fun showBookmarks() {
+        val marks = Playback.bookmarks(movie.id)
+        if (marks.isEmpty()) return
+        val multiDisc = movie.files.size > 1
+        AlertDialog.Builder(this)
+            .setTitle("Bookmarks")
+            .setItems(marks.map { "Play from ${Format.bookmark(it, multiDisc)}" }.toTypedArray()) { _, which ->
+                Nav.play(this, movie.id, marks[which].position, marks[which].part)
+            }
+            .show()
     }
 
     override fun onResume() {
@@ -76,6 +92,11 @@ class MovieActivity : FragmentActivity() {
         val r = Playback.resume(movie.id)
         findViewById<Button>(R.id.play).text = if (r != null) "Resume (${Format.resumePoint(r)})" else "Play"
         findViewById<Button>(R.id.restart).visibility = if (r != null) View.VISIBLE else View.GONE
+        val marks = Playback.bookmarks(movie.id).size
+        findViewById<Button>(R.id.bookmarks).apply {
+            visibility = if (marks > 0) View.VISIBLE else View.GONE
+            text = "Bookmarks ($marks)"
+        }
         findViewById<Button>(R.id.watched).text = if (Playback.isWatched(movie.id)) "Mark unwatched" else "Mark watched"
     }
 }

@@ -9,11 +9,13 @@ import androidx.leanback.widget.HeaderItem
 import androidx.leanback.widget.ListRow
 import androidx.leanback.widget.ListRowPresenter
 import androidx.leanback.widget.OnItemViewClickedListener
+import androidx.leanback.widget.OnItemViewSelectedListener
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.randyflix.R
 import com.randyflix.data.ActionItem
+import com.randyflix.data.Channel
 import com.randyflix.data.Library
 import com.randyflix.data.LiveTv
 import kotlinx.coroutines.launch
@@ -22,6 +24,14 @@ import kotlinx.coroutines.launch
 class MainFragment : BrowseSupportFragment() {
     private val rowsAdapter = ArrayObjectAdapter(ListRowPresenter())
     private val rowIds = ArrayList<String>()
+    private var selected: Any? = null
+
+    /** The ☰ button: favorites menu on a channel tile. Returns true if handled. */
+    fun onMenuKey(): Boolean {
+        val ch = selected as? Channel ?: return false
+        Nav.channelMenu(requireActivity(), ch, LiveTv.LIST_FAVORITES)
+        return true
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -32,7 +42,10 @@ class MainFragment : BrowseSupportFragment() {
         searchAffordanceColor = ContextCompat.getColor(requireContext(), R.color.accent)
         setOnSearchClickedListener { startActivity(Intent(requireContext(), SearchActivity::class.java)) }
         adapter = rowsAdapter
-        onItemViewClickedListener = OnItemViewClickedListener { _, item, _, _ -> Nav.open(requireActivity(), item) }
+        onItemViewClickedListener = OnItemViewClickedListener { _, item, _, _ ->
+            if (item is Channel) Nav.watch(requireActivity(), item, LiveTv.LIST_FAVORITES) else Nav.open(requireActivity(), item)
+        }
+        onItemViewSelectedListener = OnItemViewSelectedListener { _, item, _, _ -> selected = item }
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -63,8 +76,12 @@ class MainFragment : BrowseSupportFragment() {
         )
         rows += Triple("browse", "Browse", actions)
 
+        // Live TV: the favorites, then a tile for the full list.
         val channels = LiveTv.channels
-        if (channels.isNotEmpty()) rows += Triple("live", "Live TV", channels)
+        if (channels.isNotEmpty()) {
+            val all = ActionItem(Nav.ACTION_CHANNELS, "All channels", "${LiveTv.all().size} channels", R.drawable.ic_tv)
+            rows += Triple("live", "Live TV", LiveTv.favorites() + all)
+        }
 
         if (data.movies.isNotEmpty()) rows += Triple("recent_movies", "Recently Added Movies", Library.recentMovies())
         if (data.shows.isNotEmpty()) rows += Triple("recent_shows", "Recently Updated Shows", Library.recentShows())

@@ -57,4 +57,30 @@ object Playback {
     }
 
     fun lastActivity(id: String): Long = maxOf(resume(id)?.time ?: 0L, watchedAt(id))
+
+    /** A saved spot to jump back to. [part] is the disc, for multi-disc movies. */
+    data class Bookmark(val position: Long, val part: Int = 0)
+
+    /** Bookmarks for a video, in order (disc, then time). Stored as "part:position;…". */
+    fun bookmarks(id: String): List<Bookmark> =
+        prefs.getString("b:$id", null)?.split(';')?.mapNotNull { s ->
+            val bits = s.split(':')
+            val part = bits.getOrNull(0)?.toIntOrNull() ?: return@mapNotNull null
+            val pos = bits.getOrNull(1)?.toLongOrNull() ?: return@mapNotNull null
+            Bookmark(pos, part)
+        }?.sortedWith(compareBy({ it.part }, { it.position })) ?: emptyList()
+
+    /** Adds a bookmark; one within 5 seconds of an existing one replaces it. Keeps at most 30. */
+    fun addBookmark(id: String, b: Bookmark) {
+        val list = bookmarks(id).filterNot { it.part == b.part && kotlin.math.abs(it.position - b.position) < 5_000 } + b
+        writeBookmarks(id, list.sortedWith(compareBy({ it.part }, { it.position })).takeLast(30))
+    }
+
+    fun removeBookmark(id: String, b: Bookmark) = writeBookmarks(id, bookmarks(id) - b)
+
+    private fun writeBookmarks(id: String, list: List<Bookmark>) {
+        val e = prefs.edit()
+        if (list.isEmpty()) e.remove("b:$id") else e.putString("b:$id", list.joinToString(";") { "${it.part}:${it.position}" })
+        e.apply()
+    }
 }

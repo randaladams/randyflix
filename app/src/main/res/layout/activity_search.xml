@@ -8,7 +8,7 @@
         android:id="@+id/query"
         style="@style/Field"
         android:layout_marginLeft="48dp"
-        android:layout_marginTop="24dp"
+        android:layout_marginTop="64dp"
         android:layout_marginRight="48dp"
         android:hint="Search movies and shows"
         android:imeOptions="actionSearch" />

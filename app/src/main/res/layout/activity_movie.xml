@@ -21,7 +21,7 @@
         android:layout_height="match_parent"
         android:orientation="horizontal"
         android:paddingLeft="48dp"
-        android:paddingTop="40dp"
+        android:paddingTop="60dp"
         android:paddingRight="48dp"
         android:paddingBottom="32dp">
 
@@ -100,6 +100,11 @@
                     android:id="@+id/restart"
                     style="@style/TvButton"
                     android:text="Start over" />
+
+                <Button
+                    android:id="@+id/bookmarks"
+                    style="@style/TvButton"
+                    android:text="Bookmarks" />
 
                 <Button
                     android:id="@+id/watched"

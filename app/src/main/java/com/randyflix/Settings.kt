@@ -3,7 +3,7 @@ package com.randyflix
 import android.content.Context
 import android.content.SharedPreferences
 
-/** Connection settings for the Pi's Samba shares. */
+/** Connection settings for the Pi's Samba shares, plus a few display preferences. */
 object Settings {
     private lateinit var prefs: SharedPreferences
 
@@ -32,10 +32,26 @@ object Settings {
         get() = prefs.getBoolean("intro", true)
         set(v) = prefs.edit().putBoolean("intro", v).apply()
 
-    /** Live TV playlist (.m3u) on the share; blank turns Live TV off. */
-    var livePath: String
-        get() = str("live", "movies/_live/channels.m3u")
-        set(v) = put("live", v.trim('/', '\\', ' '))
+    /**
+     * The app's own folder on the share, holding channels.m3u (Live TV) and backgrounds/
+     * (menu background images). Blank turns both off.
+     */
+    var appFolder: String
+        get() = str("appfolder", "movies/_randyflix")
+        set(v) = put("appfolder", v.trim('/', '\\', ' ').replace('\\', '/'))
+
+    val livePlaylist: String get() = appFolder.takeIf { it.isNotBlank() }?.let { "$it/channels.m3u" } ?: ""
+    val backgroundsFolder: String get() = appFolder.takeIf { it.isNotBlank() }?.let { "$it/backgrounds" } ?: ""
+
+    /** Clock on the menus: 24-hour instead of 12-hour. */
+    var clock24: Boolean
+        get() = prefs.getBoolean("clock24", false)
+        set(v) = prefs.edit().putBoolean("clock24", v).apply()
+
+    /** All channels list order: most watched first instead of by name. */
+    var channelsByUse: Boolean
+        get() = prefs.getBoolean("chsort_use", false)
+        set(v) = prefs.edit().putBoolean("chsort_use", v).apply()
 
     /** Start the next episode automatically when one ends. */
     var autoPlayNext: Boolean

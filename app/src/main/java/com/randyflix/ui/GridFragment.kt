@@ -3,6 +3,7 @@ package com.randyflix.ui
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.view.KeyEvent
 import androidx.core.os.bundleOf
 import androidx.fragment.app.FragmentActivity
 import androidx.leanback.app.VerticalGridSupportFragment
@@ -11,20 +12,34 @@ import androidx.leanback.widget.FocusHighlight
 import androidx.leanback.widget.OnItemViewClickedListener
 import androidx.leanback.widget.VerticalGridPresenter
 import com.randyflix.R
+import com.randyflix.data.Channel
 import com.randyflix.data.Library
+import com.randyflix.data.LiveTv
 
 /** A poster grid: all movies, all shows, a collection, or search results. */
 class GridFragment : VerticalGridSupportFragment() {
     private val items = ArrayObjectAdapter(CardPresenter())
+    private var selected: Any? = null
+
+    /** The ☰ button: favorites menu on a channel tile. Returns true if handled. */
+    fun onMenuKey(): Boolean {
+        val ch = selected as? Channel ?: return false
+        Nav.channelMenu(requireActivity(), ch, LiveTv.LIST_ALL)
+        return true
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val mode = arguments?.getString(ARG_MODE) ?: MODE_MOVIES
         title = arguments?.getString(ARG_TITLE) ?: getString(R.string.app_name)
-        gridPresenter = VerticalGridPresenter(FocusHighlight.ZOOM_FACTOR_SMALL).apply { numberOfColumns = 6 }
+        // Channel tiles are wide, so fewer per row.
+        gridPresenter = VerticalGridPresenter(FocusHighlight.ZOOM_FACTOR_SMALL)
+            .apply { numberOfColumns = if (mode == MODE_CHANNELS) 3 else 6 }
         adapter = items
         onItemViewClickedListener = OnItemViewClickedListener { _, item, _, _ -> Nav.open(requireActivity(), item) }
+        setOnItemViewSelectedListener { _, item, _, _ -> selected = item }
         when {
+            mode == MODE_CHANNELS -> setItems(LiveTv.all())
             mode == MODE_MOVIES -> setItems(Library.data.movies.sortedBy { it.sortTitle })
             mode == MODE_SHOWS -> setItems(Library.data.shows.sortedBy { it.sortTitle })
             mode.startsWith(MODE_COLLECTION) -> setItems(Library.collection(mode.removePrefix(MODE_COLLECTION)))
@@ -33,7 +48,13 @@ class GridFragment : VerticalGridSupportFragment() {
 
     override fun onResume() {
         super.onResume()
-        if (items.size() > 0) items.notifyArrayItemRangeChanged(0, items.size()) // refresh watched marks
+        if (arguments?.getString(ARG_MODE) == MODE_CHANNELS) {
+            // Re-sort: "most watched" order may have changed after watching.
+            val list = LiveTv.all()
+            if (list != items.unmodifiableList<Any>()) setItems(list)
+        } else if (items.size() > 0) {
+            items.notifyArrayItemRangeChanged(0, items.size()) // refresh watched marks
+        }
     }
 
     fun setItems(list: List<Any>) {
@@ -47,6 +68,7 @@ class GridFragment : VerticalGridSupportFragment() {
         const val MODE_MOVIES = "movies"
         const val MODE_SHOWS = "shows"
         const val MODE_SEARCH = "search"
+        const val MODE_CHANNELS = "channels"
         const val MODE_COLLECTION = "collection:"
 
         fun newInstance(mode: String, title: String) = GridFragment().apply {
@@ -66,6 +88,16 @@ class GridActivity : FragmentActivity() {
                 .replace(R.id.container, GridFragment.newInstance(mode, title))
                 .commit()
         }
+        Screen.background(this)
+        Screen.clock(this)
+    }
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
+        if (keyCode == KeyEvent.KEYCODE_MENU) {
+            val grid = supportFragmentManager.findFragmentById(R.id.container) as? GridFragment
+            if (grid?.onMenuKey() == true) return true
+        }
+        return super.onKeyDown(keyCode, event)
     }
 
     companion object {

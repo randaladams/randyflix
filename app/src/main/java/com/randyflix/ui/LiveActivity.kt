@@ -30,8 +30,9 @@ import com.randyflix.smb.Smb
 import com.randyflix.smb.StreamDataSource
 
 /**
- * Full-screen live TV. Up/Down change channel (wrapping around the playlist), with a banner
- * showing the channel. No resume points or watched marks: it's live.
+ * Full-screen live TV. Up/Down change channel, wrapping around the list it was started from
+ * (favorites or all channels), with a banner showing the channel. ☰ adds/removes the channel
+ * from favorites. No resume points or watched marks: it's live.
  */
 @OptIn(UnstableApi::class)
 class LiveActivity : FragmentActivity() {
@@ -42,8 +43,12 @@ class LiveActivity : FragmentActivity() {
     private lateinit var bannerInfo: TextView
     private var player: ExoPlayer? = null
     private var index = 0
+    private var listKind = LiveTv.LIST_ALL
+    private var channels: List<Channel> = emptyList()   // snapshot, so the order doesn't shift while surfing
     private val handler = Handler(Looper.getMainLooper())
     private val hideBanner = Runnable { banner.visibility = View.GONE }
+    private var counted: Channel? = null
+    private val countWatch = Runnable { counted?.let { LiveTv.countWatch(it) } }
 
     // Per-channel user agent / referrer are set on this before each tune.
     private val http = DefaultHttpDataSource.Factory()
@@ -53,7 +58,15 @@ class LiveActivity : FragmentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (LiveTv.channels.isEmpty()) return finish()
+        listKind = savedInstanceState?.getString(STATE_LIST) ?: intent.getStringExtra(EXTRA_LIST) ?: LiveTv.LIST_ALL
+        channels = LiveTv.list(listKind)
+        // A channel that's no longer a favorite (or a stale tile) falls back to the full list.
+        val url = intent.getStringExtra(Nav.EXTRA_ID)
+        if (channels.none { it.url == url } && savedInstanceState == null) {
+            listKind = LiveTv.LIST_ALL
+            channels = LiveTv.all()
+        }
+        if (channels.isEmpty()) return finish()
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         setContentView(R.layout.activity_live)
         playerView = findViewById(R.id.player_view)
@@ -61,17 +74,18 @@ class LiveActivity : FragmentActivity() {
         bannerLogo = findViewById(R.id.banner_logo)
         bannerName = findViewById(R.id.banner_name)
         bannerInfo = findViewById(R.id.banner_info)
-        index = savedInstanceState?.getInt(STATE_INDEX) ?: LiveTv.indexOf(intent.getStringExtra(Nav.EXTRA_ID)).coerceAtLeast(0)
+        index = savedInstanceState?.getInt(STATE_INDEX) ?: channels.indexOfFirst { it.url == url }.coerceAtLeast(0)
     }
 
     override fun onStart() {
         super.onStart()
-        if (player == null && LiveTv.channels.isNotEmpty()) start()
+        if (player == null && channels.isNotEmpty()) start()
     }
 
     override fun onStop() {
         super.onStop()
         handler.removeCallbacks(hideBanner)
+        handler.removeCallbacks(countWatch)
         player?.release()
         player = null
     }
@@ -79,6 +93,7 @@ class LiveActivity : FragmentActivity() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putInt(STATE_INDEX, index)
+        outState.putString(STATE_LIST, listKind)
     }
 
     private fun start() {
@@ -102,12 +117,15 @@ class LiveActivity : FragmentActivity() {
         tune(index)
     }
 
-    private fun channel(): Channel = LiveTv.channels[index.coerceIn(0, LiveTv.channels.size - 1)]
+    private fun channel(): Channel = channels[index.coerceIn(0, channels.size - 1)]
 
     private fun tune(i: Int) {
-        val channels = LiveTv.channels
         index = Math.floorMod(i, channels.size)
         val ch = channels[index]
+        // Counts toward "most watched" once it's been on for a minute.
+        handler.removeCallbacks(countWatch)
+        counted = ch
+        handler.postDelayed(countWatch, 60_000)
         http.setUserAgent(ch.userAgent ?: DEFAULT_USER_AGENT)
         http.setDefaultRequestProperties(ch.referrer?.let { mapOf("Referer" to it) } ?: emptyMap())
         val item = MediaItem.Builder()
@@ -120,9 +138,15 @@ class LiveActivity : FragmentActivity() {
             prepare()
             playWhenReady = true
         }
-        showBanner(ch, listOfNotNull("${index + 1} of ${channels.size}", ch.groups.joinToString(", ").ifEmpty { null })
-            .joinToString("  ·  "))
+        showBanner(ch, position(ch))
     }
+
+    /** "2 of 5 · Favorites · Novelas" */
+    private fun position(ch: Channel): String = listOfNotNull(
+        "${index + 1} of ${channels.size}",
+        if (listKind == LiveTv.LIST_FAVORITES) "Favorites" else "All channels",
+        ch.groups.joinToString(", ").ifEmpty { null },
+    ).joinToString("  ·  ")
 
     private fun showBanner(ch: Channel, info: String, stay: Boolean = false) {
         handler.removeCallbacks(hideBanner)
@@ -133,20 +157,35 @@ class LiveActivity : FragmentActivity() {
         if (!stay) handler.postDelayed(hideBanner, BANNER_MS)
     }
 
-    /** Up/Down (or Channel +/-) change channel while the controls are hidden. */
+    /** Up/Down (or Channel +/-) change channel while the controls are hidden; ☰ toggles favorite. */
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         if (player != null && event.action == KeyEvent.ACTION_DOWN && !playerView.isControllerFullyVisible) {
             when (event.keyCode) {
                 KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_CHANNEL_UP -> { tune(index - 1); return true }
                 KeyEvent.KEYCODE_DPAD_DOWN, KeyEvent.KEYCODE_CHANNEL_DOWN -> { tune(index + 1); return true }
-                KeyEvent.KEYCODE_INFO -> { showBanner(channel(), "${index + 1} of ${LiveTv.channels.size}"); return true }
+                KeyEvent.KEYCODE_INFO -> { showBanner(channel(), position(channel())); return true }
             }
+        }
+        if (player != null && event.keyCode == KeyEvent.KEYCODE_MENU) {
+            if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
+                val ch = channel()
+                val wasFavorite = LiveTv.isFavorite(ch)
+                val note = when {
+                    !LiveTv.toggleFavorite(ch) -> "Favorites are full (${LiveTv.MAX_FAVORITES}) · remove one first"
+                    wasFavorite -> "Removed from favorites"
+                    else -> "★ Added to favorites"
+                }
+                showBanner(ch, note)
+            }
+            return true
         }
         return playerView.dispatchKeyEvent(event) || super.dispatchKeyEvent(event)
     }
 
     companion object {
+        const val EXTRA_LIST = "list"
         private const val STATE_INDEX = "index"
+        private const val STATE_LIST = "list"
         private const val BANNER_MS = 4_000L
         // Some free streams refuse players they don't recognise; a plain browser string works for most.
         private const val DEFAULT_USER_AGENT =

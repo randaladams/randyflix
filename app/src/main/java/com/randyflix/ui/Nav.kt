@@ -9,6 +9,7 @@ import com.randyflix.data.Channel
 import com.randyflix.data.ContinueItem
 import com.randyflix.data.EpisodeRef
 import com.randyflix.data.Library
+import com.randyflix.data.LiveTv
 import com.randyflix.data.Movie
 import com.randyflix.data.Playback
 import com.randyflix.data.Show
@@ -20,11 +21,12 @@ object Nav {
             is Movie -> activity.startActivity(Intent(activity, MovieActivity::class.java).putExtra(EXTRA_ID, item.id))
             is Show -> activity.startActivity(Intent(activity, ShowActivity::class.java).putExtra(EXTRA_ID, item.id))
             is EpisodeRef -> playWithPrompt(activity, item.episode.id, item.episode.title)
-            is Channel -> activity.startActivity(Intent(activity, LiveActivity::class.java).putExtra(EXTRA_ID, item.url))
+            is Channel -> watch(activity, item, LiveTv.LIST_ALL)
             is ContinueItem -> play(activity, item.id, item.resume?.position ?: 0L, item.resume?.part ?: 0)
             is ActionItem -> when (item.id) {
                 ACTION_MOVIES -> activity.startActivity(GridActivity.intent(activity, GridFragment.MODE_MOVIES, "Movies"))
                 ACTION_SHOWS -> activity.startActivity(GridActivity.intent(activity, GridFragment.MODE_SHOWS, "TV Shows"))
+                ACTION_CHANNELS -> activity.startActivity(GridActivity.intent(activity, GridFragment.MODE_CHANNELS, "All channels"))
                 ACTION_SEARCH -> activity.startActivity(Intent(activity, SearchActivity::class.java))
                 ACTION_SETTINGS -> activity.startActivity(Intent(activity, SettingsActivity::class.java))
                 ACTION_REFRESH -> {
@@ -47,18 +49,60 @@ object Nav {
         )
     }
 
-    /** Ask "Resume / Start over" when there is a saved position, otherwise just play. */
-    fun playWithPrompt(activity: Activity, id: String, title: String) {
+    /** Live TV, stepping through [list] (favorites or all channels) with Up/Down. */
+    fun watch(activity: Activity, channel: Channel, list: String) {
+        activity.startActivity(
+            Intent(activity, LiveActivity::class.java).putExtra(EXTRA_ID, channel.url).putExtra(LiveActivity.EXTRA_LIST, list)
+        )
+    }
+
+    /** The ☰ menu on a channel tile: watch it, or add/remove it from the home-screen favorites. */
+    fun channelMenu(activity: Activity, channel: Channel, list: String) {
+        val favorite = LiveTv.isFavorite(channel)
+        AlertDialog.Builder(activity)
+            .setTitle(channel.name)
+            .setItems(arrayOf("Watch", if (favorite) "Remove from favorites" else "Add to favorites")) { _, which ->
+                if (which == 0) watch(activity, channel, list) else toggleFavorite(activity, channel)
+            }
+            .show()
+    }
+
+    fun toggleFavorite(activity: Activity, channel: Channel) {
+        val wasFavorite = LiveTv.isFavorite(channel)
+        val message = when {
+            !LiveTv.toggleFavorite(channel) -> "Favorites are full (${LiveTv.MAX_FAVORITES}). Remove one first."
+            wasFavorite -> "Removed ${channel.name} from favorites"
+            else -> "Added ${channel.name} to favorites"
+        }
+        Toast.makeText(activity, message, Toast.LENGTH_SHORT).show()
+    }
+
+    /**
+     * Ask "Resume / Start over / bookmarks" when there is a saved position or bookmark, otherwise
+     * just play. [multiDisc] labels bookmarks with their disc.
+     */
+    fun playWithPrompt(activity: Activity, id: String, title: String, multiDisc: Boolean = false) {
         val r = Playback.resume(id)
-        if (r == null) {
+        val marks = Playback.bookmarks(id)
+        if (r == null && marks.isEmpty()) {
             play(activity, id, 0L)
             return
         }
+        val labels = ArrayList<String>()
+        val actions = ArrayList<() -> Unit>()
+        if (r != null) {
+            labels += "Resume from ${Format.resumePoint(r)}"
+            actions += { play(activity, id, r.position, r.part) }
+        }
+        labels += "Start from the beginning"
+        actions += { play(activity, id, 0L) }
+        for (b in marks) {
+            labels += "🔖 Bookmark ${Format.bookmark(b, multiDisc)}"
+            actions += { play(activity, id, b.position, b.part) }
+        }
         AlertDialog.Builder(activity)
             .setTitle(title)
-            .setItems(arrayOf("Resume from ${Format.resumePoint(r)}", "Start from the beginning")) { _, which ->
-                if (which == 0) play(activity, id, r.position, r.part) else play(activity, id, 0L)
-            }
+            .setItems(labels.toTypedArray()) { _, which -> actions[which]() }
             .show()
     }
 
@@ -66,6 +110,7 @@ object Nav {
     const val ACTION_MOVIES = "movies"
     const val ACTION_SHOWS = "shows"
     const val ACTION_SEARCH = "search"
+    const val ACTION_CHANNELS = "channels"
     const val ACTION_REFRESH = "refresh"
     const val ACTION_SETTINGS = "settings"
 }

@@ -2,7 +2,6 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bg"
     android:orientation="vertical">
 
 <ScrollView
@@ -42,8 +41,8 @@
             <TextView style="@style/FieldLabel" android:text="TV shows folder" />
             <EditText android:id="@+id/tv" style="@style/Field" android:hint="tv" />
 
-            <TextView style="@style/FieldLabel" android:text="Live TV playlist (.m3u on the share; blank = off)" />
-            <EditText android:id="@+id/live" style="@style/Field" android:hint="movies/_live/channels.m3u" />
+            <TextView style="@style/FieldLabel" android:text="RandyFlix folder (channels.m3u and backgrounds/; blank = off)" />
+            <EditText android:id="@+id/app_folder" style="@style/Field" android:hint="movies/_randyflix" />
         </LinearLayout>
 
         <LinearLayout
@@ -67,6 +66,9 @@
             <Button android:id="@+id/clear_images" style="@style/TvButton" android:layout_marginBottom="12dp" android:text="Clear artwork cache" />
             <Button android:id="@+id/intro" style="@style/TvButton" android:layout_marginBottom="12dp" android:text="Intro on startup: On" />
             <Button android:id="@+id/autoplay" style="@style/TvButton" android:layout_marginBottom="12dp" android:text="Auto-play next episode: On" />
+            <Button android:id="@+id/clock" style="@style/TvButton" android:layout_marginBottom="12dp" android:text="Clock: 12-hour" />
+            <Button android:id="@+id/channel_order" style="@style/TvButton" android:layout_marginBottom="12dp" android:text="All channels order: By name" />
+            <Button android:id="@+id/reset_favorites" style="@style/TvButton" android:layout_marginBottom="12dp" android:text="Reset Live TV favorites to the playlist" />
 
         </LinearLayout>
     </LinearLayout>
@@ -79,7 +81,7 @@
         android:layout_height="wrap_content"
         android:background="@color/brand"
         android:ellipsize="end"
-        android:maxLines="3"
+        android:maxLines="4"
         android:minHeight="36dp"
         android:gravity="center_vertical"
         android:paddingLeft="48dp"

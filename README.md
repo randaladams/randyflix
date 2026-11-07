@@ -8,6 +8,8 @@ A small, self-contained Fire TV app for browsing and playing my own movie and TV
 - Plays with ExoPlayer (Media3): mp4, m4v, mkv, webm, ts and most avi files. It picks up `.srt`, `.ass` and `.vtt` subtitles next to the video, or in a `Subs` folder, plus subtitles embedded in mkv files.
 - Plays a short intro clip (`app/src/main/res/raw/intro.mp4`) on startup. Any button skips it, and Settings can turn it off.
 - Remembers where you stopped, marks things watched, shows Continue Watching and Next Up, and plays the next episode automatically (Settings can turn this off).
+- Bookmarks: ☰ in the player saves a spot; jump back from the same menu, the movie page, or the episode's play prompt.
+- Date and time at the top of every menu screen and the pause screen (12- or 24-hour in Settings).
 
 ## Expected library layout
 
@@ -55,11 +57,31 @@ https://github.com/randaladams/randyflix/releases/download/latest/randyflix.apk
 
 Updates install over the old version with no uninstall needed, so resume points and watched marks are kept. Every build is signed with the same key, `app/randyflix.keystore`. That key exists only so personal sideloaded builds can update in place.
 
-## Live TV
+## The RandyFlix folder
 
-Put an `.m3u` playlist on a share (default: `movies/_live/channels.m3u`, i.e. `\\adamsnas\MOVIES\_live\channels.m3u`) and its channels appear in a **Live TV** row on the home screen. The path is set in Settings; blank turns Live TV off. The playlist is re-read on every app start and library refresh, so edit it on the PC and restart the app.
+The app keeps its own files in one folder on the share (default `movies/_randyflix`, i.e. `\\adamsnas\MOVIES\_randyflix`; set in Settings, blank turns both features off). The `_` keeps the library scan out of it.
+
+```
+_randyflix/
+  channels.m3u       Live TV playlist
+  backgrounds/       menu background pictures (.jpg/.png/.webp)
+```
+
+Both are re-read on every app start and library refresh.
+
+### Backgrounds
+
+One picture a day, stepping through `backgrounds/` in name order, shown dimmed behind the home screen, grids, search and Settings. Movie and show pages keep their own fanart. An empty or missing folder gives the plain dark background.
+
+### Live TV
+
+The channels in `channels.m3u` appear in a **Live TV** row on the home screen: your favorites (up to 5), then an **All channels** tile that opens every channel, sorted by name or by most watched (Settings).
 
 - Each channel is the usual two lines: `#EXTINF:-1 tvg-logo="…" group-title="…",Name` then the stream URL.
+- `#SECTION:Favorites` starts the favorites; `#SECTION:Full list` (or any other name) ends them. Every channel is in All channels either way. Other players ignore `#SECTION`, so the file still works in VLC.
+- Favorites can also be changed with the remote (☰ on a channel tile, or while watching). Once you do, the Firestick keeps its own list; Settings → **Reset Live TV favorites to the playlist** goes back to the file's section.
+- Up/Down while watching steps through the list you started from (favorites from the home row, everything from All channels).
+- "Most watched" counts a channel once it's been on for a minute.
 - Streams can be `http(s)` (HLS `.m3u8` or MPEG-TS) or a file path relative to the playlist's folder.
 - `#EXTVLCOPT:http-user-agent=…` / `http-referrer=…` (or the same `http-*` attributes on `#EXTINF`) are sent with that channel's requests.
 - No program guide yet.
@@ -69,9 +91,13 @@ Put an `.m3u` playlist on a share (default: `movies/_live/channels.m3u`, i.e. `\
 | Where | Button | Action |
 |---|---|---|
 | Player | Left / Right (controls hidden) | Back 10 s / forward 30 s |
-| Player | Select | Show controls (subtitles and audio track buttons are there) |
+| Player | Select | Show controls |
+| Player | ☰ Menu | Pause and open the menu: add / go to / delete bookmarks, subtitles (Off or a language), audio language |
 | Player | Play/Pause, Rewind, Fast-forward | As labeled |
-| Live TV | Up / Down (controls hidden) | Previous / next channel |
+| Live TV | Up / Down (controls hidden) | Previous / next channel in the list you started from |
+| Live TV | ☰ Menu | Add / remove the channel from favorites |
+| Channel tile | ☰ Menu | Watch, or add / remove from favorites |
+| Home screen | Back | "Exit RandyFlix?" (Yes is selected; Back again exits) |
 | Episode list | Hold Select | Mark watched / unwatched, or a whole season |
 
 ## Building locally (optional)

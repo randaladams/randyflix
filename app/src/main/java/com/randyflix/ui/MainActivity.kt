@@ -1,9 +1,12 @@
 package com.randyflix.ui
 
+import android.app.AlertDialog
 import android.content.Intent
 import android.os.Bundle
+import android.view.KeyEvent
 import android.view.View
 import android.widget.TextView
+import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -12,6 +15,7 @@ import com.randyflix.R
 import com.randyflix.Settings
 import com.randyflix.data.Library
 import com.randyflix.data.LiveTv
+import com.randyflix.data.Backgrounds
 import com.randyflix.data.ScanState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
@@ -30,8 +34,15 @@ class MainActivity : FragmentActivity() {
             startActivity(Intent(this, SettingsActivity::class.java))
         } else {
             LiveTv.refresh()
+            Backgrounds.refresh()
             Library.scanIfStale()
         }
+
+        Screen.background(this)
+        Screen.clock(this)
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() = confirmExit()
+        })
 
         // Scan progress goes in a small line at the bottom so it doesn't crowd the home screen.
         val status = findViewById<TextView>(R.id.scan_status)
@@ -61,6 +72,33 @@ class MainActivity : FragmentActivity() {
                 }
             }
         }
+    }
+
+    /** "Exit RandyFlix?" with Yes selected; pressing Back again also exits. */
+    private fun confirmExit() {
+        val dialog = AlertDialog.Builder(this)
+            .setMessage("Exit RandyFlix?")
+            .setPositiveButton("Yes") { _, _ -> finish() }
+            .setNegativeButton("No", null)
+            .setOnKeyListener { d, keyCode, event ->
+                if (keyCode != KeyEvent.KEYCODE_BACK) return@setOnKeyListener false
+                if (event.action == KeyEvent.ACTION_UP) {
+                    d.dismiss()
+                    finish()
+                }
+                true
+            }
+            .create()
+        dialog.setOnShowListener { dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.requestFocus() }
+        dialog.show()
+    }
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
+        if (keyCode == KeyEvent.KEYCODE_MENU) {
+            val home = supportFragmentManager.findFragmentById(R.id.container) as? MainFragment
+            if (home?.onMenuKey() == true) return true
+        }
+        return super.onKeyDown(keyCode, event)
     }
 
     private fun show(view: TextView, text: String) {
