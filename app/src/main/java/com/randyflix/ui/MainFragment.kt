@@ -76,11 +76,11 @@ class MainFragment : BrowseSupportFragment() {
         )
         rows += Triple("browse", "Browse", actions)
 
-        // Live TV: the favorites, then a tile for the full list.
-        val channels = LiveTv.channels
-        if (channels.isNotEmpty()) {
-            val all = ActionItem(Nav.ACTION_CHANNELS, "All channels", "${LiveTv.all().size} channels", R.drawable.ic_tv)
-            rows += Triple("live", "Live TV", LiveTv.favorites() + all)
+        // Live TV: the favorites, then My channels and the channel guide.
+        if (LiveTv.channels.isNotEmpty() || LiveTv.catalog.isNotEmpty()) {
+            val mine = ActionItem(Nav.ACTION_CHANNELS, "My channels", "${LiveTv.all().size} channels", R.drawable.ic_tv)
+            val guide = ActionItem(Nav.ACTION_GUIDE, "Channel guide", "${LiveTv.catalog.size} channels", R.drawable.ic_tv)
+            rows += Triple("live", "Live TV", LiveTv.favorites() + mine + guide)
         }
 
         if (data.movies.isNotEmpty()) rows += Triple("recent_movies", "Recently Added Movies", Library.recentMovies())

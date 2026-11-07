@@ -66,7 +66,8 @@ The app keeps its own files in one folder on the share (default `movies/_randyfl
 
 ```
 _randyflix/
-  channels.m3u       Live TV playlist
+  channels.m3u       Live TV playlist (your channels)
+  catalog.m3u        channel guide catalog (category = group-title)
   backgrounds/       menu background pictures (.jpg/.png/.webp)
 ```
 
@@ -89,6 +90,12 @@ The channels in `channels.m3u` appear in a **Live TV** row on the home screen: y
 - `#EXTVLCOPT:http-user-agent=…` / `http-referrer=…` (or the same `http-*` attributes on `#EXTINF`) are sent with that channel's requests.
 - No program guide yet.
 
+### Channel guide
+
+**Live TV → Channel guide** lists categories on the left (My channels, then the catalog's categories), the channels in the middle, and a muted live preview of the highlighted channel on the right (it starts after a second on a channel). Select watches full screen, and Up/Down then flip through that category. ☰ on a channel adds it to or removes it from **My channels** (no limit, kept on the Firestick) or **Favorites** (the 5 on the home screen).
+
+`catalog.m3u` (about 180 English and Brazilian channels) was built from the iptv-org lists, keeping only streams from free ad-supported services (Pluto, Samsung TV Plus, Plex, Roku, Tubi, Xumo, Amagi/Wurl playout) and networks' own free feeds, and testing each one. Free channels come and go: run `Test-Catalog.ps1` (in the RandyFlix folder on the PC) every month or so to drop the ones that stopped working (`-WhatIf` to only report).
+
 ## Remote controls
 
 | Where | Button | Action |
@@ -98,8 +105,8 @@ The channels in `channels.m3u` appear in a **Live TV** row on the home screen: y
 | Player | ☰ Menu | Pause and open the side panel: add bookmark, bookmarks (go to / delete), CC on/off, caption language, audio language. ☰ or Back closes it and playback continues |
 | Player | Play/Pause, Rewind, Fast-forward | As labeled |
 | Live TV | Up / Down (controls hidden) | Previous / next channel in the list you started from |
-| Live TV | ☰ Menu | Side panel (channel keeps playing): add / remove favorite, CC on/off, caption language, audio language |
-| Channel tile | ☰ Menu | Watch, or add / remove from favorites |
+| Live TV | ☰ Menu | Side panel (channel keeps playing): favorite, My channels, CC on/off, caption language, audio language |
+| Channel tile / guide row | ☰ Menu | Watch, add / remove My channels, add / remove Favorites |
 | Home screen | Back | "Exit RandyFlix?" (Yes is selected; Back again exits) |
 | Episode list | Hold Select | Mark watched / unwatched, or a whole season |
 

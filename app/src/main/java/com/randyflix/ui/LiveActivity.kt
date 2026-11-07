@@ -63,11 +63,18 @@ class LiveActivity : FragmentActivity() {
         super.onCreate(savedInstanceState)
         listKind = savedInstanceState?.getString(STATE_LIST) ?: intent.getStringExtra(EXTRA_LIST) ?: LiveTv.LIST_ALL
         channels = LiveTv.list(listKind)
-        // A channel that's no longer a favorite (or a stale tile) falls back to the full list.
+        // A channel that's no longer in the list it was opened from falls back to My channels,
+        // then to its guide category.
         val url = intent.getStringExtra(Nav.EXTRA_ID)
         if (channels.none { it.url == url } && savedInstanceState == null) {
             listKind = LiveTv.LIST_ALL
             channels = LiveTv.all()
+            if (channels.none { it.url == url }) {
+                LiveTv.catalog.firstOrNull { it.url == url }?.groups?.firstOrNull()?.let { cat ->
+                    listKind = LiveTv.LIST_CATEGORY + cat
+                    channels = LiveTv.list(listKind)
+                }
+            }
         }
         if (channels.isEmpty()) return finish()
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -154,7 +161,7 @@ class LiveActivity : FragmentActivity() {
     /** "2 of 5 · Favorites · Novelas" */
     private fun position(ch: Channel): String = listOfNotNull(
         "${index + 1} of ${channels.size}",
-        if (listKind == LiveTv.LIST_FAVORITES) "Favorites" else "All channels",
+        LiveTv.listName(listKind),
         ch.groups.joinToString(", ").ifEmpty { null },
     ).joinToString("  ·  ")
 
@@ -169,6 +176,9 @@ class LiveActivity : FragmentActivity() {
                 val was = LiveTv.isFavorite(ch)
                 if (!LiveTv.toggleFavorite(ch)) toast("Favorites are full (${LiveTv.MAX_FAVORITES}). Remove one first.")
                 else toast(if (was) "Removed from favorites" else "Added to favorites")
+            }
+            items += PlayerMenu.Item(if (LiveTv.isMine(ch)) "✓  Remove from My channels" else "+  Add to My channels") {
+                toast(if (LiveTv.toggleMine(ch)) "Added to My channels" else "Removed from My channels")
             }
             if (p != null) items += TrackChoice.menuItems(p, menu, ::toast)
             ch.name to items
@@ -209,7 +219,7 @@ class LiveActivity : FragmentActivity() {
         private const val STATE_LIST = "list"
         private const val BANNER_MS = 4_000L
         // Some free streams refuse players they don't recognise; a plain browser string works for most.
-        private const val DEFAULT_USER_AGENT =
+        const val DEFAULT_USER_AGENT =
             "Mozilla/5.0 (Linux; Android 7.1.2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36"
     }
 }

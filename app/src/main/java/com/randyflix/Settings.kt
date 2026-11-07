@@ -41,6 +41,7 @@ object Settings {
         set(v) = put("appfolder", v.trim('/', '\\', ' ').replace('\\', '/'))
 
     val livePlaylist: String get() = appFolder.takeIf { it.isNotBlank() }?.let { "$it/channels.m3u" } ?: ""
+    val catalogPath: String get() = appFolder.takeIf { it.isNotBlank() }?.let { "$it/catalog.m3u" } ?: ""
     val backgroundsFolder: String get() = appFolder.takeIf { it.isNotBlank() }?.let { "$it/backgrounds" } ?: ""
 
     /** Clock on the menus: 24-hour instead of 12-hour. */

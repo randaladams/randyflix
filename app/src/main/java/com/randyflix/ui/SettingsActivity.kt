@@ -98,7 +98,7 @@ class SettingsActivity : TvActivity() {
         }
         val order = findViewById<Button>(R.id.channel_order)
         fun showOrderState() {
-            order.text = if (Settings.channelsByUse) "All channels order: Most watched" else "All channels order: By name"
+            order.text = if (Settings.channelsByUse) "My channels order: Most watched" else "My channels order: By name"
         }
         showOrderState()
         order.setOnClickListener {
@@ -214,6 +214,14 @@ class SettingsActivity : TvActivity() {
                             "✓ Live TV ($path): ${channels.size} channels, ${channels.count { it.inFavorites }} in Favorites"
                         } catch (e: Exception) {
                             "⚠ Live TV ($path): ${Scanner.describe(e)}"
+                        }
+                    }
+                    Settings.catalogPath.takeIf { it.isNotBlank() }?.let { path ->
+                        lines += try {
+                            val text = Smb.readBytes(path).toString(Charsets.UTF_8)
+                            "✓ Channel guide ($path): ${M3u.parse(text, "").size} channels"
+                        } catch (e: Exception) {
+                            "⚠ Channel guide ($path): ${Scanner.describe(e)}"
                         }
                     }
                     Settings.backgroundsFolder.takeIf { it.isNotBlank() }?.let { path ->

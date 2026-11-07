@@ -39,6 +39,7 @@
             android:windowSoftInputMode="adjustNothing" />
         <activity android:name=".ui.MovieActivity" android:exported="false" />
         <activity android:name=".ui.ShowActivity" android:exported="false" />
+        <activity android:name=".ui.GuideActivity" android:exported="false" />
         <activity android:name=".ui.SettingsActivity" android:exported="false"
             android:windowSoftInputMode="adjustResize" />
         <activity

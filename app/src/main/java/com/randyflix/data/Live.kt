@@ -101,22 +101,35 @@ object M3u {
 }
 
 /**
- * The channel list, read from the playlist on the share and cached on the Firestick for offline starts.
- * Favorites (up to [MAX_FAVORITES], shown on the home screen) start as the playlist's Favorites
- * section; once changed with the remote, the Firestick's own list is used instead.
+ * Live TV channels, read from the share and cached on the Firestick for offline starts:
+ * - [channels]: your own playlist (channels.m3u).
+ * - [catalog]: the channel guide's catalog (catalog.m3u), one category per group-title.
+ * My channels = the playlist's channels (minus any removed with the remote) plus catalog
+ * channels added with the remote. Favorites (up to [MAX_FAVORITES], shown on the home screen)
+ * start as the playlist's Favorites section; once changed with the remote, the Firestick's
+ * own list is used instead. Both can hold any known channel.
  */
 object LiveTv {
     const val MAX_FAVORITES = 5
     const val LIST_FAVORITES = "favorites"
+    /** My channels. */
     const val LIST_ALL = "all"
+    /** Prefix for a guide category's list, e.g. "cat:News". */
+    const val LIST_CATEGORY = "cat:"
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private lateinit var cache: File
+    private lateinit var catalogCache: File
     private lateinit var prefs: SharedPreferences
 
-    /** Every channel, in playlist order. */
+    /** Your playlist, in file order. */
     @Volatile
     var channels: List<Channel> = emptyList()
+        private set
+
+    /** The guide's catalog, in file order. */
+    @Volatile
+    var catalog: List<Channel> = emptyList()
         private set
 
     private val _version = MutableStateFlow(0)
@@ -129,49 +142,73 @@ object LiveTv {
 
     fun load(context: Context) {
         cache = File(context.filesDir, "live.m3u")
+        catalogCache = File(context.filesDir, "catalog.m3u")
         prefs = context.getSharedPreferences("live", Context.MODE_PRIVATE)
-        if (cache.exists()) runCatching { publish(M3u.parse(cache.readText(), folder())) }
+        if (cache.exists()) runCatching { channels = M3u.parse(cache.readText(), folder()) }
+        if (catalogCache.exists()) runCatching { catalog = M3u.parse(catalogCache.readText(), folder()) }
+        _version.update { it + 1 }
     }
 
-    /** Re-reads the playlist from the share. Cheap, so it runs on every start and library refresh. */
+    /** Re-reads the playlist and the catalog from the share. Cheap, so it runs on every start and library refresh. */
     fun refresh() {
         scope.launch {
             val path = Settings.livePlaylist
             if (path.isBlank()) {
                 error = null
                 cache.delete()
-                publish(emptyList())
+                catalogCache.delete()
+                publish(emptyList(), emptyList())
                 return@launch
             }
+            var list = channels
+            var cat = catalog
             try {
                 val text = Smb.readBytes(path).toString(Charsets.UTF_8)
                 error = null
                 cache.writeText(text)
-                publish(M3u.parse(text, folder()))
+                list = M3u.parse(text, folder())
             } catch (e: Exception) {
                 error = "Live TV playlist ($path): ${Scanner.describe(e)}"
             }
+            // The catalog is optional: no file just means an empty guide.
+            try {
+                val text = Smb.readBytes(Settings.catalogPath).toString(Charsets.UTF_8)
+                catalogCache.writeText(text)
+                cat = M3u.parse(text, folder())
+            } catch (e: Exception) {
+                if (error == null && Scanner.describe(e).contains("not found", true)) {
+                    catalogCache.delete()
+                    cat = emptyList()
+                }
+            }
+            publish(list, cat)
         }
     }
 
+    /** Every channel the app knows, by URL (playlist first). */
+    private fun known(): Map<String, Channel> {
+        val map = LinkedHashMap<String, Channel>()
+        for (c in channels) map.putIfAbsent(c.url, c)
+        for (c in catalog) map.putIfAbsent(c.url, c)
+        return map
+    }
+
+    private fun urls(key: String): List<String> =
+        prefs.getString(key, null)?.split('\n')?.filter { it.isNotBlank() } ?: emptyList()
+
+    private fun putUrls(key: String, list: List<String>) {
+        prefs.edit().putString(key, list.distinct().joinToString("\n")).apply()
+        _version.update { it + 1 }
+    }
+
+    // ---- Favorites (home screen) ----
+
     /** The home-screen channels, in order. */
     fun favorites(): List<Channel> {
-        val all = channels
-        val custom = prefs.getString("favorites", null)
-            ?: return all.filter { it.inFavorites }.distinctBy { it.url }.take(MAX_FAVORITES)
-        val byUrl = all.associateBy { it.url }
-        return custom.split('\n').mapNotNull { byUrl[it] }.distinctBy { it.url }.take(MAX_FAVORITES)
+        if (!prefs.contains("favorites")) return channels.filter { it.inFavorites }.distinctBy { it.url }.take(MAX_FAVORITES)
+        val byUrl = known()
+        return urls("favorites").mapNotNull { byUrl[it] }.distinctBy { it.url }.take(MAX_FAVORITES)
     }
-
-    /** Every channel, sorted by name or by how often it's been watched (Settings). */
-    fun all(): List<Channel> {
-        val list = channels.distinctBy { it.url }
-        val byName = compareBy<Channel, String>(String.CASE_INSENSITIVE_ORDER) { it.name }
-        return if (Settings.channelsByUse) list.sortedWith(compareByDescending<Channel> { watchCount(it) }.then(byName))
-        else list.sortedWith(byName)
-    }
-
-    fun list(kind: String?): List<Channel> = if (kind == LIST_FAVORITES) favorites() else all()
 
     fun isFavorite(ch: Channel): Boolean = favorites().any { it.url == ch.url }
 
@@ -181,8 +218,7 @@ object LiveTv {
         val next = if (ch.url in current) current - ch.url
         else if (current.size >= MAX_FAVORITES) return false
         else current + ch.url
-        prefs.edit().putString("favorites", next.joinToString("\n")).apply()
-        _version.update { it + 1 }
+        putUrls("favorites", next)
         return true
     }
 
@@ -194,6 +230,55 @@ object LiveTv {
 
     val hasCustomFavorites: Boolean get() = prefs.contains("favorites")
 
+    // ---- My channels ----
+
+    /** My channels, sorted by name or by how often each has been watched (Settings). */
+    fun all(): List<Channel> {
+        val removed = urls("mine_removed").toSet()
+        val byUrl = known()
+        val list = (channels.filter { it.url !in removed } + urls("mine_added").mapNotNull { byUrl[it] }).distinctBy { it.url }
+        val byName = compareBy<Channel, String>(String.CASE_INSENSITIVE_ORDER) { it.name }
+        return if (Settings.channelsByUse) list.sortedWith(compareByDescending<Channel> { watchCount(it) }.then(byName))
+        else list.sortedWith(byName)
+    }
+
+    fun isMine(ch: Channel): Boolean = all().any { it.url == ch.url }
+
+    /** Adds [ch] to My channels, or takes it off. Returns whether it's in My channels now. */
+    fun toggleMine(ch: Channel): Boolean {
+        val inPlaylist = channels.any { it.url == ch.url }
+        return if (isMine(ch)) {
+            if (inPlaylist) putUrls("mine_removed", urls("mine_removed") + ch.url)
+            putUrls("mine_added", urls("mine_added") - ch.url)
+            false
+        } else {
+            if (inPlaylist) putUrls("mine_removed", urls("mine_removed") - ch.url)
+            else putUrls("mine_added", urls("mine_added") + ch.url)
+            true
+        }
+    }
+
+    // ---- Guide ----
+
+    /** The catalog's categories, in file order. */
+    fun categories(): List<String> = catalog.mapNotNull { it.groups.firstOrNull() }.distinct()
+
+    fun category(name: String): List<Channel> = catalog.filter { it.groups.firstOrNull() == name }.distinctBy { it.url }
+
+    /** Favorites, My channels, or one guide category. */
+    fun list(kind: String?): List<Channel> = when {
+        kind == LIST_FAVORITES -> favorites()
+        kind != null && kind.startsWith(LIST_CATEGORY) -> category(kind.removePrefix(LIST_CATEGORY))
+        else -> all()
+    }
+
+    /** "Favorites", "My channels" or the category name, for the channel banner. */
+    fun listName(kind: String?): String = when {
+        kind == LIST_FAVORITES -> "Favorites"
+        kind != null && kind.startsWith(LIST_CATEGORY) -> kind.removePrefix(LIST_CATEGORY)
+        else -> "My channels"
+    }
+
     fun watchCount(ch: Channel): Int = prefs.getInt("n:${ch.url}", 0)
 
     /** Counted once a channel has stayed on for a minute, so flipping past doesn't count. */
@@ -203,9 +288,10 @@ object LiveTv {
 
     private fun folder() = Settings.livePlaylist.substringBeforeLast('/', "")
 
-    private fun publish(list: List<Channel>) {
-        if (list == channels) return
+    private fun publish(list: List<Channel>, cat: List<Channel>) {
+        if (list == channels && cat == catalog) return
         channels = list
+        catalog = cat
         _version.update { it + 1 }
     }
 }

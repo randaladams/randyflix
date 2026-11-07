@@ -105,7 +105,7 @@
 
                 <LinearLayout android:id="@+id/sec_live" style="@style/SettingsSection">
                     <TextView style="@style/SectionTitle" android:text="Live TV" />
-                    <Button android:id="@+id/channel_order" style="@style/StackButton" android:text="All channels order: By name" />
+                    <Button android:id="@+id/channel_order" style="@style/StackButton" android:text="My channels order: By name" />
                     <Button android:id="@+id/reset_favorites" style="@style/StackButton" android:text="Reset Live TV favorites to the playlist" />
                 </LinearLayout>
 
@@ -134,7 +134,7 @@
         android:layout_height="wrap_content"
         android:background="@color/brand"
         android:ellipsize="end"
-        android:maxLines="4"
+        android:maxLines="5"
         android:minHeight="36dp"
         android:gravity="center_vertical"
         android:paddingLeft="48dp"

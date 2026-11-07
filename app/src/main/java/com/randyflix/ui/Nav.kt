@@ -26,7 +26,8 @@ object Nav {
             is ActionItem -> when (item.id) {
                 ACTION_MOVIES -> activity.startActivity(GridActivity.intent(activity, GridFragment.MODE_MOVIES, "Movies"))
                 ACTION_SHOWS -> activity.startActivity(GridActivity.intent(activity, GridFragment.MODE_SHOWS, "TV Shows"))
-                ACTION_CHANNELS -> activity.startActivity(GridActivity.intent(activity, GridFragment.MODE_CHANNELS, "All channels"))
+                ACTION_CHANNELS -> activity.startActivity(GridActivity.intent(activity, GridFragment.MODE_CHANNELS, "My channels"))
+                ACTION_GUIDE -> activity.startActivity(Intent(activity, GuideActivity::class.java))
                 ACTION_SEARCH -> activity.startActivity(Intent(activity, SearchActivity::class.java))
                 ACTION_SETTINGS -> activity.startActivity(Intent(activity, SettingsActivity::class.java))
                 ACTION_REFRESH -> {
@@ -56,13 +57,24 @@ object Nav {
         )
     }
 
-    /** The ☰ menu on a channel tile: watch it, or add/remove it from the home-screen favorites. */
+    /** The ☰ menu on a channel tile or guide row: watch it, or change My channels / Favorites. */
     fun channelMenu(activity: Activity, channel: Channel, list: String) {
+        val mine = LiveTv.isMine(channel)
         val favorite = LiveTv.isFavorite(channel)
         AlertDialog.Builder(activity)
             .setTitle(channel.name)
-            .setItems(arrayOf("Watch", if (favorite) "Remove from favorites" else "Add to favorites")) { _, which ->
-                if (which == 0) watch(activity, channel, list) else toggleFavorite(activity, channel)
+            .setItems(arrayOf(
+                "Watch",
+                if (mine) "Remove from My channels" else "Add to My channels",
+                if (favorite) "Remove from Favorites (home screen)" else "Add to Favorites (home screen)",
+            )) { _, which ->
+                when (which) {
+                    0 -> watch(activity, channel, list)
+                    1 -> Toast.makeText(activity,
+                        if (LiveTv.toggleMine(channel)) "Added ${channel.name} to My channels" else "Removed ${channel.name} from My channels",
+                        Toast.LENGTH_SHORT).show()
+                    else -> toggleFavorite(activity, channel)
+                }
             }
             .show()
     }
@@ -111,6 +123,7 @@ object Nav {
     const val ACTION_SHOWS = "shows"
     const val ACTION_SEARCH = "search"
     const val ACTION_CHANNELS = "channels"
+    const val ACTION_GUIDE = "guide"
     const val ACTION_REFRESH = "refresh"
     const val ACTION_SETTINGS = "settings"
 }

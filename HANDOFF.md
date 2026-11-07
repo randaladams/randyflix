@@ -84,7 +84,7 @@ com/randyflix/
   data/Scanner.kt                library scan (incremental), name/episode parsing
   data/Library.kt                in-memory index, scan job, queries (continue watching, next up, search)
   data/Playback.kt               resume positions and watched marks
-  data/Live.kt                   Channel, M3U parser (#SECTION), LiveTv (playlist, favorites, watch counts)
+  data/Live.kt                   Channel, M3U parser (#SECTION), LiveTv (playlist + guide catalog, My channels, favorites, watch counts)
   data/Backgrounds.kt            daily menu background from <app folder>/backgrounds
   ui/IntroActivity.kt            startup clip
   ui/MainActivity + MainFragment home rows
@@ -95,6 +95,7 @@ com/randyflix/
   ui/SettingsActivity            settings + connection test
   ui/Screen.kt                   ClockView + daily background, added to each menu screen
   ui/PlayerMenu.kt               ☰ side panel for both players; TrackChoice = CC on/off, caption/audio language
+  ui/GuideActivity.kt            channel guide: categories, channel rows, muted live preview
   ui/ScreenSaver.kt              screen saver slideshow + TvActivity (base for menu screens and the player)
   ui/CardPresenter, ImageLoader, Nav, Format   shared UI helpers
 ```
