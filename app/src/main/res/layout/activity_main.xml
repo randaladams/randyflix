@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <FrameLayout
+        android:id="@+id/container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- Small library-scan status, bottom right; hidden when idle. -->
+    <TextView
+        android:id="@+id/scan_status"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="24dp"
+        android:layout_marginBottom="16dp"
+        android:background="@drawable/status_bg"
+        android:ellipsize="end"
+        android:maxWidth="520dp"
+        android:paddingLeft="12dp"
+        android:paddingTop="4dp"
+        android:paddingRight="12dp"
+        android:paddingBottom="4dp"
+        android:singleLine="true"
+        android:textColor="@color/text_secondary"
+        android:textSize="12sp"
+        android:visibility="gone" />
+</FrameLayout>

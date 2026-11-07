@@ -15,7 +15,6 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.randyflix.R
 import com.randyflix.data.ActionItem
 import com.randyflix.data.Library
-import com.randyflix.data.ScanState
 import kotlinx.coroutines.launch
 
 /** Home screen: Continue Watching, Browse, Recently Added rows. */
@@ -36,8 +35,7 @@ class MainFragment : BrowseSupportFragment() {
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                launch { Library.version.collect { buildRows() } }
-                launch { Library.state.collect { showState(it) } }
+                Library.version.collect { buildRows() }
             }
         }
     }
@@ -45,15 +43,6 @@ class MainFragment : BrowseSupportFragment() {
     override fun onResume() {
         super.onResume()
         buildRows()
-    }
-
-    private fun showState(state: ScanState) {
-        val name = getString(R.string.app_name)
-        title = when (state) {
-            is ScanState.Running -> "$name  ·  ${state.message}"
-            is ScanState.Failed -> "$name  ·  ⚠ ${state.message.lineSequence().first()}"
-            else -> name
-        }
     }
 
     private fun buildRows() {
