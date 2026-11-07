@@ -204,7 +204,7 @@ class ScreenSaver(
  * Subclasses that override dispatchKeyEvent must call [saverKey] first.
  */
 abstract class TvActivity : FragmentActivity() {
-    protected lateinit var saver: ScreenSaver
+    protected lateinit var screenSaver: ScreenSaver
 
     /** Whether the screen saver may start right now. */
     protected open fun saverAllowed(): Boolean = true
@@ -214,29 +214,29 @@ abstract class TvActivity : FragmentActivity() {
 
     override fun onPostCreate(savedInstanceState: Bundle?) {
         super.onPostCreate(savedInstanceState)
-        if (!isFinishing) saver = ScreenSaver(this, saverHoldsScreenOn) { saverAllowed() }
+        if (!isFinishing) screenSaver = ScreenSaver(this, saverHoldsScreenOn) { saverAllowed() }
     }
 
     override fun onResume() {
         super.onResume()
-        if (::saver.isInitialized) saver.onResume()
+        if (::screenSaver.isInitialized) screenSaver.onResume()
     }
 
     override fun onPause() {
         super.onPause()
-        if (::saver.isInitialized) saver.onPause()
+        if (::screenSaver.isInitialized) screenSaver.onPause()
     }
 
-    protected fun saverKey(event: KeyEvent): Boolean = ::saver.isInitialized && saver.onKey(event)
+    protected fun saverKey(event: KeyEvent): Boolean = ::screenSaver.isInitialized && screenSaver.onKey(event)
 
     /** Restart the countdown (e.g. playback was just paused). */
     protected fun saverPoke() {
-        if (::saver.isInitialized) saver.poke()
+        if (::screenSaver.isInitialized) screenSaver.poke()
     }
 
     /** The screen saver setting changed. */
     protected fun saverSettingsChanged() {
-        if (::saver.isInitialized) saver.settingsChanged()
+        if (::screenSaver.isInitialized) screenSaver.settingsChanged()
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean = saverKey(event) || super.dispatchKeyEvent(event)

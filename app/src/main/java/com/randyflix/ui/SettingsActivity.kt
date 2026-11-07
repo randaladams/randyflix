@@ -48,9 +48,7 @@ class SettingsActivity : TvActivity() {
         findViewById<TextView>(R.id.version).text = "RandyFlix $version"
         findViewById<TextView>(R.id.about_text).text =
             "Plays the movie and TV library on ${Settings.host} over the network, plus Live TV and " +
-                "background pictures from the RandyFlix folder (${Settings.appFolder.ifBlank { "off" }}).
-
-" +
+                "background pictures from the RandyFlix folder (${Settings.appFolder.ifBlank { "off" }}).\n\n" +
                 "Library: ${Library.data.movies.size} movies, ${Library.data.shows.size} TV shows."
 
         findViewById<Button>(R.id.save).setOnClickListener {
