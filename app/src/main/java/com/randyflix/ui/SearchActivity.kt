@@ -1,10 +1,10 @@
 package com.randyflix.ui
 
 import android.os.Bundle
+import android.view.KeyEvent
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
-import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.FragmentActivity
 import com.randyflix.R
 import com.randyflix.data.Library
@@ -21,9 +21,12 @@ class SearchActivity : FragmentActivity() {
         }
 
         val query = findViewById<EditText>(R.id.query)
-        query.doAfterTextChanged { grid.setItems(Library.search(it?.toString().orEmpty())) }
-        query.setOnEditorActionListener { v, actionId, _ ->
-            if (actionId == EditorInfo.IME_ACTION_SEARCH || actionId == EditorInfo.IME_ACTION_DONE) {
+        // Search only when Enter/Search is pressed; querying on every keystroke is too slow on the stick.
+        query.setOnEditorActionListener { v, actionId, event ->
+            val enterKey = event?.keyCode == KeyEvent.KEYCODE_ENTER || event?.keyCode == KeyEvent.KEYCODE_DPAD_CENTER
+            if (enterKey && event?.action != KeyEvent.ACTION_DOWN) return@setOnEditorActionListener true
+            if (actionId == EditorInfo.IME_ACTION_SEARCH || actionId == EditorInfo.IME_ACTION_DONE || enterKey) {
+                grid.setItems(Library.search(v.text.toString()))
                 (getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager).hideSoftInputFromWindow(v.windowToken, 0)
                 grid.view?.requestFocus()
                 true

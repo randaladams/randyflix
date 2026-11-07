@@ -15,16 +15,16 @@ object Settings {
     private fun put(key: String, value: String) = prefs.edit().putString(key, value.trim()).apply()
 
     var host: String
-        get() = str("host", "raspberrypi")
+        get() = str("host", "adamsnas")
         set(v) = put("host", v)
 
-    /** Movies location: share name plus optional subfolder, e.g. "storage" or "media/storage". */
+    /** Movies location: share name plus optional subfolder, e.g. "movies" or "media/movies". */
     var moviesPath: String
-        get() = str("movies", "storage")
+        get() = str("movies", "movies")
         set(v) = put("movies", v.trim('/', '\\', ' '))
 
     var tvPath: String
-        get() = str("tv", "storage2")
+        get() = str("tv", "tv")
         set(v) = put("tv", v.trim('/', '\\', ' '))
 
     var user: String
