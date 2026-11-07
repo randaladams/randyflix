@@ -57,7 +57,7 @@ Updates install over the old version with no uninstall needed, so resume points 
 
 ## Live TV
 
-Put an `.m3u` playlist on a share (default: `movies/_live/channels.m3u`, i.e. `\adamsnas\MOVIES\_live\channels.m3u`) and its channels appear in a **Live TV** row on the home screen. The path is set in Settings; blank turns Live TV off. The playlist is re-read on every app start and library refresh, so edit it on the PC and restart the app.
+Put an `.m3u` playlist on a share (default: `movies/_live/channels.m3u`, i.e. `\\adamsnas\MOVIES\_live\channels.m3u`) and its channels appear in a **Live TV** row on the home screen. The path is set in Settings; blank turns Live TV off. The playlist is re-read on every app start and library refresh, so edit it on the PC and restart the app.
 
 - Each channel is the usual two lines: `#EXTINF:-1 tvg-logo="…" group-title="…",Name` then the stream URL.
 - Streams can be `http(s)` (HLS `.m3u8` or MPEG-TS) or a file path relative to the playlist's folder.

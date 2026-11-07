@@ -101,7 +101,7 @@ com/randyflix/
 2. Time the first full scan on the real library, and make sure posters, plots and episodes all look right.
 3. Check playback of the different formats in the library. Expected trouble: **DTS or TrueHD audio** and old **DivX/Xvid AVI** files. If that's an issue, options are the Media3 FFmpeg audio extension (needs a native build step in CI) or an "Open in VLC" fallback.
 4. Possible later features (none started): genre rows or filters, sort options, the Pi-side indexer (only if needed), a "next episode" countdown, and a Live TV program guide (Now/Next from XMLTV).
-5. **Live TV** (added 2026-11-06): playlist at `\adamsnas\MOVIES\_live\channels.m3u` with 5 Brazilian novela channels picked from https://iptv-org.github.io/iptv/countries/br.m3u. Globo, Record and Band returned 403 from this network (likely Brazil-only). Not yet tested on the Firestick.
+5. **Live TV** (added 2026-11-06): playlist at `\\adamsnas\MOVIES\_live\channels.m3u` with 5 Brazilian novela channels picked from https://iptv-org.github.io/iptv/countries/br.m3u. Globo, Record and Band returned 403 from this network (likely Brazil-only). Not yet tested on the Firestick.
 
 ## 8. Moving to a new machine
 
