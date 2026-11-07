@@ -36,6 +36,11 @@ class MainFragment : BrowseSupportFragment() {
         else -> false
     }
 
+    /** Back to the first row (Back from the rows, on the way up to the top bar). */
+    fun scrollToTop() {
+        if (rowsAdapter.size() > 0) setSelectedPosition(0, false)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         headersState = HEADERS_DISABLED

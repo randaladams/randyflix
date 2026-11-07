@@ -201,7 +201,7 @@ class LiveActivity : FragmentActivity() {
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         if (player != null) when (menu.dispatchKey(event) { openMenu() }) {
             PlayerMenu.Key.CONSUMED -> return true
-            PlayerMenu.Key.TO_PANEL -> return super.dispatchKeyEvent(event)
+            PlayerMenu.Key.TO_PANEL -> return KeyClicks.dispatch(this, event) { super.dispatchKeyEvent(it) }
             PlayerMenu.Key.NOT_MINE -> {}
         }
         if (player != null && event.action == KeyEvent.ACTION_DOWN && !playerView.isControllerFullyVisible) {
@@ -211,7 +211,7 @@ class LiveActivity : FragmentActivity() {
                 KeyEvent.KEYCODE_INFO -> { showBanner(channel(), position(channel())); return true }
             }
         }
-        return playerView.dispatchKeyEvent(event) || super.dispatchKeyEvent(event)
+        return KeyClicks.dispatch(this, event) { playerView.dispatchKeyEvent(it) || super.dispatchKeyEvent(it) }
     }
 
     companion object {

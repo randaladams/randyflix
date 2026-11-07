@@ -259,5 +259,6 @@ abstract class TvActivity : FragmentActivity() {
         if (::screenSaver.isInitialized) screenSaver.settingsChanged()
     }
 
-    override fun dispatchKeyEvent(event: KeyEvent): Boolean = saverKey(event) || super.dispatchKeyEvent(event)
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean =
+        saverKey(event) || KeyClicks.dispatch(this, event) { super.dispatchKeyEvent(it) }
 }

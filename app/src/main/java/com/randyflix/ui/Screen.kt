@@ -123,8 +123,45 @@ class ClockView(context: Context, private val withDate: Boolean = true) : TextVi
     }
 }
 
-/** Key clicks (Settings → Sound): views made after this inherit the theme's sound setting. */
+/**
+ * Key clicks (Settings → Sound). Two different sounds:
+ * - Select: played by the view that's clicked, so turning off views' sound effects (the theme
+ *   overlay below) silences it.
+ * - Moving the highlight: played by Android itself whenever *it* moves the highlight for an
+ *   arrow key, whatever the views say. So with clicks off, [dispatch] moves the highlight the
+ *   same way Android would and reports the key as handled, and Android never plays the click.
+ */
 object KeyClicks {
+    /**
+     * Use as the end of an activity's dispatchKeyEvent: [superDispatch] is the normal handling
+     * (the screen and its views); arrow keys nothing used are then moved silently.
+     */
+    fun dispatch(activity: android.app.Activity, event: android.view.KeyEvent, superDispatch: (android.view.KeyEvent) -> Boolean): Boolean {
+        if (superDispatch(event)) return true
+        if (Settings.keyClicks || event.action != android.view.KeyEvent.ACTION_DOWN) return false
+        val direction = when (event.keyCode) {
+            android.view.KeyEvent.KEYCODE_DPAD_UP -> View.FOCUS_UP
+            android.view.KeyEvent.KEYCODE_DPAD_DOWN -> View.FOCUS_DOWN
+            android.view.KeyEvent.KEYCODE_DPAD_LEFT -> View.FOCUS_LEFT
+            android.view.KeyEvent.KEYCODE_DPAD_RIGHT -> View.FOCUS_RIGHT
+            else -> return false
+        }
+        val focused = activity.currentFocus ?: return false
+        val root = activity.window.decorView as? ViewGroup ?: return false
+        val next = focused.focusSearch(direction) ?: return false
+        if (next === focused) return true
+        // Same as Android: pass where the highlight was, so the nearest item gets it.
+        val rect = android.graphics.Rect()
+        focused.getFocusedRect(rect)
+        return try {
+            root.offsetDescendantRectToMyCoords(focused, rect)
+            root.offsetRectIntoDescendantCoords(next, rect)
+            next.requestFocus(direction, rect)
+        } catch (e: IllegalArgumentException) {
+            next.requestFocus(direction)
+        }
+    }
+
     /** Call before super.onCreate. Returns the setting it applied. */
     fun apply(activity: android.app.Activity): Boolean {
         val on = Settings.keyClicks

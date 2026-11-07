@@ -22,6 +22,7 @@ import kotlinx.coroutines.launch
 
 class MainActivity : TvActivity() {
     private var shown: ScanState? = null
+    private lateinit var topBar: TopBar
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,7 +39,7 @@ class MainActivity : TvActivity() {
         }
 
         Screen.background(this)
-        Screen.topBar(this, Tab.HOME)
+        topBar = Screen.topBar(this, Tab.HOME)
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() = confirmExit()
         })
@@ -103,8 +104,8 @@ class MainActivity : TvActivity() {
     private var backDown = false
 
     /**
-     * Back always asks "Exit RandyFlix?" on the first press, wherever the highlight is: it's
-     * caught here before the rows or the top bar can use it to move the highlight instead.
+     * Back from the rows goes up to the top bar (and scrolls back to the first row); Back on the
+     * top bar asks "Exit RandyFlix?", where Back once more exits.
      */
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         if (event.keyCode == KeyEvent.KEYCODE_BACK && !screenSaverShowing()) {
@@ -114,7 +115,13 @@ class MainActivity : TvActivity() {
                 return true
             }
             if (event.action == KeyEvent.ACTION_UP) {
-                if (backDown && !event.isCanceled) confirmExit()
+                if (backDown && !event.isCanceled) {
+                    if (topBar.hasFocus()) confirmExit()
+                    else {
+                        (supportFragmentManager.findFragmentById(R.id.container) as? MainFragment)?.scrollToTop()
+                        topBar.focusCurrent()
+                    }
+                }
                 backDown = false
                 return true
             }

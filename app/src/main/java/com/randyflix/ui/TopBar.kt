@@ -79,6 +79,11 @@ class TopBar(
         addView(clock, LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
     }
 
+    /** Moves the highlight to this screen's tab. */
+    fun focusCurrent() {
+        tabs[current]?.requestFocus()
+    }
+
     /** Coming from the screen below, only the current tab can take focus. */
     override fun addFocusables(views: ArrayList<View>, direction: Int, focusableMode: Int) {
         if (hasFocus()) super.addFocusables(views, direction, focusableMode)
