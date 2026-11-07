@@ -9,6 +9,7 @@ A small, self-contained Fire TV app for browsing and playing my own movie and TV
 - Plays a short intro clip (`app/src/main/res/raw/intro.mp4`) on startup. Any button skips it, and Settings can turn it off.
 - Remembers where you stopped, marks things watched, shows Continue Watching and Next Up, and plays the next episode automatically (Settings can turn this off).
 - Bookmarks: ☰ in the player saves a spot; jump back from the same menu, the movie page, or the episode's play prompt.
+- Captions start off for every video and channel; CC in the ☰ panel turns them on until you leave the player. Live channels show captions only when the stream announces them.
 - Date and time at the top of every menu screen and the pause screen (12- or 24-hour in Settings).
 
 ## Expected library layout
@@ -92,10 +93,10 @@ The channels in `channels.m3u` appear in a **Live TV** row on the home screen: y
 |---|---|---|
 | Player | Left / Right (controls hidden) | Back 10 s / forward 30 s |
 | Player | Select | Show controls |
-| Player | ☰ Menu | Pause and open the menu: add / go to / delete bookmarks, subtitles (Off or a language), audio language |
+| Player | ☰ Menu | Pause and open the side panel: add bookmark, bookmarks (go to / delete), CC on/off, caption language, audio language. ☰ or Back closes it and playback continues |
 | Player | Play/Pause, Rewind, Fast-forward | As labeled |
 | Live TV | Up / Down (controls hidden) | Previous / next channel in the list you started from |
-| Live TV | ☰ Menu | Add / remove the channel from favorites |
+| Live TV | ☰ Menu | Side panel (channel keeps playing): add / remove favorite, CC on/off, caption language, audio language |
 | Channel tile | ☰ Menu | Watch, or add / remove from favorites |
 | Home screen | Back | "Exit RandyFlix?" (Yes is selected; Back again exits) |
 | Episode list | Hold Select | Mark watched / unwatched, or a whole season |

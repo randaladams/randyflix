@@ -9,6 +9,7 @@ import android.view.View
 import android.view.WindowManager
 import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.annotation.OptIn
 import androidx.fragment.app.FragmentActivity
 import androidx.media3.common.AudioAttributes
@@ -17,6 +18,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.common.Tracks
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.DefaultRenderersFactory
@@ -31,8 +33,8 @@ import com.randyflix.smb.StreamDataSource
 
 /**
  * Full-screen live TV. Up/Down change channel, wrapping around the list it was started from
- * (favorites or all channels), with a banner showing the channel. ☰ adds/removes the channel
- * from favorites. No resume points or watched marks: it's live.
+ * (favorites or all channels), with a banner showing the channel. ☰ opens a panel for
+ * favorites, captions and audio. No resume points or watched marks: it's live.
  */
 @OptIn(UnstableApi::class)
 class LiveActivity : FragmentActivity() {
@@ -42,6 +44,7 @@ class LiveActivity : FragmentActivity() {
     private lateinit var bannerName: TextView
     private lateinit var bannerInfo: TextView
     private var player: ExoPlayer? = null
+    private lateinit var menu: PlayerMenu
     private var index = 0
     private var listKind = LiveTv.LIST_ALL
     private var channels: List<Channel> = emptyList()   // snapshot, so the order doesn't shift while surfing
@@ -69,6 +72,7 @@ class LiveActivity : FragmentActivity() {
         if (channels.isEmpty()) return finish()
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         setContentView(R.layout.activity_live)
+        menu = PlayerMenu(this) {}
         playerView = findViewById(R.id.player_view)
         banner = findViewById(R.id.banner)
         bannerLogo = findViewById(R.id.banner_logo)
@@ -84,6 +88,7 @@ class LiveActivity : FragmentActivity() {
 
     override fun onStop() {
         super.onStop()
+        if (::menu.isInitialized) menu.close()
         handler.removeCallbacks(hideBanner)
         handler.removeCallbacks(countWatch)
         player?.release()
@@ -102,6 +107,10 @@ class LiveActivity : FragmentActivity() {
             .setAudioAttributes(AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MOVIE).build(), true)
             .build()
         p.addListener(object : Player.Listener {
+            override fun onTracksChanged(tracks: Tracks) {
+                TrackChoice.reapplyCaptions(p)
+            }
+
             override fun onPlayerError(error: PlaybackException) {
                 if (error.errorCode == PlaybackException.ERROR_CODE_BEHIND_LIVE_WINDOW) {
                     // Fell too far behind the live edge (e.g. after a stall): jump back to live.
@@ -114,6 +123,7 @@ class LiveActivity : FragmentActivity() {
         })
         player = p
         playerView.player = p
+        TrackChoice.startOff(p)   // captions start off; turning them on lasts across channel changes
         tune(index)
     }
 
@@ -148,6 +158,25 @@ class LiveActivity : FragmentActivity() {
         ch.groups.joinToString(", ").ifEmpty { null },
     ).joinToString("  ·  ")
 
+    /** ☰ panel: favorite, captions, audio. Live keeps playing behind it. */
+    private fun openMenu() {
+        playerView.hideController()
+        menu.open {
+            val ch = channel()
+            val p = player
+            val items = ArrayList<PlayerMenu.Item>()
+            items += PlayerMenu.Item(if (LiveTv.isFavorite(ch)) "★  Remove from favorites" else "☆  Add to favorites") {
+                val was = LiveTv.isFavorite(ch)
+                if (!LiveTv.toggleFavorite(ch)) toast("Favorites are full (${LiveTv.MAX_FAVORITES}). Remove one first.")
+                else toast(if (was) "Removed from favorites" else "Added to favorites")
+            }
+            if (p != null) items += TrackChoice.menuItems(p, menu, ::toast)
+            ch.name to items
+        }
+    }
+
+    private fun toast(text: String) = Toast.makeText(this, text, Toast.LENGTH_SHORT).show()
+
     private fun showBanner(ch: Channel, info: String, stay: Boolean = false) {
         handler.removeCallbacks(hideBanner)
         bannerName.text = ch.name
@@ -157,27 +186,15 @@ class LiveActivity : FragmentActivity() {
         if (!stay) handler.postDelayed(hideBanner, BANNER_MS)
     }
 
-    /** Up/Down (or Channel +/-) change channel while the controls are hidden; ☰ toggles favorite. */
+    /** Up/Down (or Channel +/-) change channel while the controls are hidden; ☰ opens the panel. */
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (player != null && menu.dispatchKey(event) { openMenu() }) return true
         if (player != null && event.action == KeyEvent.ACTION_DOWN && !playerView.isControllerFullyVisible) {
             when (event.keyCode) {
                 KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_CHANNEL_UP -> { tune(index - 1); return true }
                 KeyEvent.KEYCODE_DPAD_DOWN, KeyEvent.KEYCODE_CHANNEL_DOWN -> { tune(index + 1); return true }
                 KeyEvent.KEYCODE_INFO -> { showBanner(channel(), position(channel())); return true }
             }
-        }
-        if (player != null && event.keyCode == KeyEvent.KEYCODE_MENU) {
-            if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
-                val ch = channel()
-                val wasFavorite = LiveTv.isFavorite(ch)
-                val note = when {
-                    !LiveTv.toggleFavorite(ch) -> "Favorites are full (${LiveTv.MAX_FAVORITES}) · remove one first"
-                    wasFavorite -> "Removed from favorites"
-                    else -> "★ Added to favorites"
-                }
-                showBanner(ch, note)
-            }
-            return true
         }
         return playerView.dispatchKeyEvent(event) || super.dispatchKeyEvent(event)
     }

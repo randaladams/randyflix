@@ -94,6 +94,7 @@ com/randyflix/
   ui/LiveActivity                live TV: Up/Down channel change, channel banner
   ui/SettingsActivity            settings + connection test
   ui/Screen.kt                   ClockView + daily background, added to each menu screen
+  ui/PlayerMenu.kt               ☰ side panel for both players; TrackChoice = CC on/off, caption/audio language
   ui/CardPresenter, ImageLoader, Nav, Format   shared UI helpers
 ```
 
