@@ -217,9 +217,14 @@ class GuideActivity : TvActivity() {
     private inner class ChannelAdapter : RecyclerView.Adapter<ChannelHolder>() {
         var items: List<Channel> = emptyList()
             private set
+        // Worked out once per list, not once per row drawn.
+        private var favoriteUrls: Set<String> = emptySet()
+        private var mineUrls: Set<String> = emptySet()
 
         /** Same channels: just redraw (marks may have changed) without losing the highlighted row. */
         fun submit(list: List<Channel>, keepPlace: Boolean) {
+            favoriteUrls = LiveTv.favorites().mapTo(HashSet()) { it.url }
+            mineUrls = LiveTv.all().mapTo(HashSet()) { it.url }
             if (list == items) {
                 notifyItemRangeChanged(0, items.size)
                 return
@@ -237,7 +242,7 @@ class GuideActivity : TvActivity() {
         override fun onBindViewHolder(holder: ChannelHolder, position: Int) {
             val ch = items[position]
             holder.name.text = ch.name
-            holder.marks.text = listOfNotNull("★".takeIf { LiveTv.isFavorite(ch) }, "✓".takeIf { LiveTv.isMine(ch) && kind != LiveTv.LIST_ALL })
+            holder.marks.text = listOfNotNull("★".takeIf { ch.url in favoriteUrls }, "✓".takeIf { ch.url in mineUrls && kind != LiveTv.LIST_ALL })
                 .joinToString(" ")
             ImageLoader.load(holder.logo, ch.logo, Format.dp(this@GuideActivity, 88), placeholder = R.drawable.ic_tv)
             // Left goes back to the category this list belongs to.

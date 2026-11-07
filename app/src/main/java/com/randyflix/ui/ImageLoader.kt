@@ -27,7 +27,10 @@ object ImageLoader {
     private val memory = object : LruCache<String, Bitmap>((Runtime.getRuntime().maxMemory() / 1024 / 6).toInt()) {
         override fun sizeOf(key: String, value: Bitmap) = value.byteCount / 1024
     }
-    private val dispatcher = Executors.newFixedThreadPool(4).asCoroutineDispatcher()
+    // Pictures from the share and from the web (channel logos) load on separate threads, so a
+    // slow logo site can't hold up posters and backgrounds.
+    private val shareDispatcher = Executors.newFixedThreadPool(3).asCoroutineDispatcher()
+    private val webDispatcher = Executors.newFixedThreadPool(2).asCoroutineDispatcher()
     private val scope = MainScope()
 
     fun load(view: ImageView, source: String?, width: Int, placeholder: Int = R.drawable.placeholder) {
@@ -44,6 +47,7 @@ object ImageLoader {
         if (placeholder != 0) view.setImageResource(placeholder) else view.setImageDrawable(null)
         val appContext = view.context.applicationContext
         val job = scope.launch {
+            val dispatcher = if (isWeb(source)) webDispatcher else shareDispatcher
             val bmp = withContext(dispatcher) { runCatching { fetch(appContext, source, width, key) }.getOrNull() }
             if (bmp != null) {
                 memory.put(key, bmp)
@@ -67,7 +71,7 @@ object ImageLoader {
         val cached = File(dir, md5(key) + ".jpg")
         if (cached.exists()) BitmapFactory.decodeFile(cached.path)?.let { return it }
 
-        val bytes = if (source.startsWith("http://") || source.startsWith("https://")) download(source) else Smb.readBytes(source)
+        val bytes = if (isWeb(source)) download(source) else Smb.readBytes(source)
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
         if (bounds.outWidth <= 0) return null
@@ -85,10 +89,12 @@ object ImageLoader {
         return bmp
     }
 
+    private fun isWeb(source: String) = source.startsWith("http://") || source.startsWith("https://")
+
     private fun download(url: String): ByteArray {
         val conn = URL(url).openConnection() as HttpURLConnection
-        conn.connectTimeout = 10_000
-        conn.readTimeout = 15_000
+        conn.connectTimeout = 8_000
+        conn.readTimeout = 10_000
         conn.instanceFollowRedirects = true
         try {
             return conn.inputStream.use { it.readBytes() }
