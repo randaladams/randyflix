@@ -64,7 +64,7 @@ class PlayerActivity : TvActivity() {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         setContentView(R.layout.activity_player)
         playerView = findViewById(R.id.player_view)
-        // The time, upper right, while paused or while the controls are up; never over playing video.
+        // The time, upper right, only while paused; never over playing video.
         clock = Screen.bigClock(this)
         clock.visibility = View.GONE
         menu = PlayerMenu(this) { if (resumeAfterMenu) player?.playWhenReady = true }
@@ -76,7 +76,9 @@ class PlayerActivity : TvActivity() {
 
     private fun updateClock() {
         val paused = player?.let { !it.playWhenReady } ?: false
-        clock.visibility = if (controlsVisible || paused) View.VISIBLE else View.GONE
+        // Only while paused: the controls stay up a few seconds after Play, and the time
+        // shouldn't sit over the picture then.
+        clock.visibility = if (paused) View.VISIBLE else View.GONE
     }
 
     override fun onStart() {
