@@ -25,6 +25,19 @@ import java.util.Locale
 
 /** Shared screen furniture: the top bar, the pause-screen time and the daily background picture. */
 object Screen {
+    /**
+     * Scroll containers make themselves focusable when created (an XML focusable="false" is
+     * overridden), and the highlight can then land on one, where nothing shows it and the
+     * screen seems stuck. This turns that off for every one on the screen.
+     */
+    fun noFocusOnScrollers(activity: FragmentActivity) {
+        fun walk(v: View) {
+            if (v is android.widget.ScrollView || v is android.widget.HorizontalScrollView) v.isFocusable = false
+            if (v is ViewGroup) for (i in 0 until v.childCount) walk(v.getChildAt(i))
+        }
+        walk(activity.findViewById(android.R.id.content))
+    }
+
     /** Adds the top bar (tabs and time). [isTabRoot]: this screen is [current] itself, not a page inside it. */
     fun topBar(activity: FragmentActivity, current: Tab, isTabRoot: Boolean = true): TopBar =
         TopBar.add(activity, current, isTabRoot)

@@ -22,6 +22,7 @@
             android:layout_width="240dp"
             android:layout_height="match_parent"
             android:fillViewport="false"
+            android:focusable="false"
             android:scrollbars="none">
 
         <LinearLayout
@@ -52,7 +53,8 @@
         <ScrollView
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight="1">
+            android:layout_weight="1"
+            android:focusable="false">
 
             <FrameLayout
                 android:layout_width="match_parent"
@@ -71,7 +73,6 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
-                        android:focusable="true"
                         android:lineSpacingExtra="3dp"
                         android:textColor="@color/text_secondary"
                         android:textSize="15sp" />

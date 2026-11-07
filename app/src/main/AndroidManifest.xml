@@ -41,7 +41,7 @@
         <activity android:name=".ui.ShowActivity" android:exported="false" />
         <activity android:name=".ui.GuideActivity" android:exported="false" />
         <activity android:name=".ui.SettingsActivity" android:exported="false"
-            android:windowSoftInputMode="adjustResize" />
+            android:windowSoftInputMode="stateAlwaysHidden|adjustResize" />
         <activity
             android:name=".ui.PlayerActivity"
             android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenLayout|screenSize|smallestScreenSize"

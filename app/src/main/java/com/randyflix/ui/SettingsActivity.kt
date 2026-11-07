@@ -151,7 +151,20 @@ class SettingsActivity : TvActivity() {
             status.text = if (min == 0) "Screen saver off." else "Screen saver after $min minutes without a button press."
         }
 
+        Screen.noFocusOnScrollers(this)
         setUpSections(first = if (Settings.isConfigured) R.id.nav_about else R.id.nav_connection)
+
+        // A text field uses Left/Right to move its cursor, so Left could take many presses to
+        // get out of it. Left always goes back to the section list instead (the keyboard that
+        // opens on Select is where the text is edited).
+        for (field in listOf(host, movies, tv, appFolder)) {
+            field.setOnKeyListener { _, keyCode, event ->
+                if (keyCode == android.view.KeyEvent.KEYCODE_DPAD_LEFT) {
+                    if (event.action == android.view.KeyEvent.ACTION_DOWN) findViewById<View>(R.id.nav_connection).requestFocus()
+                    true
+                } else false
+            }
+        }
     }
 
     /**

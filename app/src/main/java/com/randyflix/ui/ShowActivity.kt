@@ -37,6 +37,7 @@ class ShowActivity : TvActivity() {
         show = s
         setContentView(R.layout.activity_show)
         Screen.topBar(this, Tab.SHOWS, isTabRoot = false)
+        Screen.noFocusOnScrollers(this)
 
         ImageLoader.load(findViewById(R.id.backdrop), s.fanart ?: s.poster, 1280, 0)
         ImageLoader.load(findViewById<ImageView>(R.id.poster), s.poster, Format.dp(this, 100))

@@ -83,6 +83,7 @@ class GuideActivity : TvActivity() {
         recycler.itemAnimator = null
         Screen.background(this)
         Screen.topBar(this, Tab.LIVE)
+        Screen.noFocusOnScrollers(this)
 
         kind = savedInstanceState?.getString(STATE_KIND) ?: LiveTv.LIST_ALL
         buildCategories()
@@ -171,6 +172,8 @@ class GuideActivity : TvActivity() {
         listTitle.text = "${LiveTv.listName(k)}  ·  ${list.size} channels"
         adapter.submit(list, keepPlace = keepFocus)
         empty.visibility = if (list.isEmpty()) View.VISIBLE else View.GONE
+        // An empty list would otherwise take the highlight itself, with nothing to show for it.
+        recycler.isFocusable = list.isNotEmpty()
         empty.text = when {
             LiveTv.catalog.isEmpty() && k != LiveTv.LIST_ALL ->
                 "No catalog.m3u in the RandyFlix folder yet."
