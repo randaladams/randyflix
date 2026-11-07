@@ -62,7 +62,7 @@ A sideloaded Fire TV app for browsing and playing my own movie and TV library, s
   - NFO: `<base>.nfo` → `movie.nfo` → any `.nfo`
 - **TV:** season folders are matched by name: `Season N`, `SN`, `Specials`, or a bare number. Episode numbers come from `S01E02` or `1x02` in the file name, and the episode `.nfo` overrides them. Episode thumbnails: `<base>-thumb.jpg`, otherwise the `.nfo`'s `<thumb>` URL. Season posters: `seasonNN-poster.jpg`.
 - **Subtitles:** `.srt`, `.ass`, `.ssa` and `.vtt` files whose name starts with the video's name. The language comes from tags like `.en.` or `.eng.`, and `forced` and `sdh` are recognized. A `Subs/` or `Subtitles/` subfolder is also checked. `.sub/.idx` subtitles aren't supported.
-- **Ignored folders:** names starting with `.`, `@`, `$` or `#`, plus `Extras`, `Featurettes`, `VIDEO_TS` and `BDMV`.
+- **Ignored folders:** names starting with `.`, `@`, `$`, `#` or `_` (e.g. `_work`), plus `Extras`, `Featurettes`, `VIDEO_TS` and `BDMV`.
 
 ## 6. Code map
 

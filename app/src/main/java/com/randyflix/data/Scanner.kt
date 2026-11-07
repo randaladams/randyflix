@@ -346,7 +346,7 @@ class Scanner(
         fun isExtra(name: String) = EXTRA.containsMatchIn(name.substringBeforeLast('.'))
 
         fun isJunk(name: String) = name.startsWith(".") || name.startsWith("@") || name.startsWith("$") ||
-            name.startsWith("#") || name.equals("System Volume Information", true) || name.equals("lost+found", true) ||
+            name.startsWith("#") || name.startsWith("_") || name.equals("System Volume Information", true) || name.equals("lost+found", true) ||
             name.equals("extras", true) || name.equals("featurettes", true) || name.equals("VIDEO_TS", true) ||
             name.equals("BDMV", true)
 
