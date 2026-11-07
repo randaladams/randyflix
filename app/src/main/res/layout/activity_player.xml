@@ -7,4 +7,4 @@
     android:background="@android:color/black"
     app:show_buffering="when_playing"
     app:show_subtitle_button="true"
-    app:show_timeout="4000" />
+    app:show_timeout="2500" />

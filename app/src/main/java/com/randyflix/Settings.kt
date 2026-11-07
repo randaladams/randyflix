@@ -32,5 +32,10 @@ object Settings {
         get() = prefs.getBoolean("intro", true)
         set(v) = prefs.edit().putBoolean("intro", v).apply()
 
+    /** Start the next episode automatically when one ends. */
+    var autoPlayNext: Boolean
+        get() = prefs.getBoolean("autoplay", true)
+        set(v) = prefs.edit().putBoolean("autoplay", v).apply()
+
     val isConfigured: Boolean get() = prefs.contains("host")
 }

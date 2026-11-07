@@ -21,6 +21,7 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.ui.PlayerView
 import com.randyflix.R
+import com.randyflix.Settings
 import com.randyflix.data.Library
 import com.randyflix.data.Movie
 import com.randyflix.data.Playback
@@ -39,6 +40,7 @@ class PlayerActivity : FragmentActivity() {
     private var player: ExoPlayer? = null
     private var currentId: String? = null   // episode being played, or the movie (for every disc)
     private var movie: Movie? = null
+    private var seekFlash = false   // controls are showing only because Left/Right seeked
     private val handler = Handler(Looper.getMainLooper())
     private val saver = object : Runnable {
         override fun run() {
@@ -130,8 +132,9 @@ class PlayerActivity : FragmentActivity() {
         val ref = Library.episode(id) ?: return emptyList()
         val eps = ref.show.ordered
         val idx = eps.indexOfFirst { it.id == id }.coerceAtLeast(0)
-        // Queue this episode and the rest of the season/show (specials are not auto-played).
+        // Queue this episode and, with auto-play on, the rest of the show (specials are not auto-played).
         return eps.drop(idx)
+            .take(if (Settings.autoPlayNext) Int.MAX_VALUE else 1)
             .filterIndexed { i, e -> i == 0 || e.season != 0 }
             .map { e ->
                 mediaItem(e.id, "${ref.show.title} · ${Format.episodeCode(e.season, e.episode)} · ${e.title}", e.subtitles)
@@ -184,20 +187,37 @@ class PlayerActivity : FragmentActivity() {
             .show()
     }
 
-    /** Left/right on the remote skips back 10s / forward 30s while the controls are hidden. */
+    /**
+     * Left/right on the remote skips back 10s / forward 30s while the controls are hidden, flashing
+     * the controls just long enough to see the new time. Other buttons show them a little longer.
+     */
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         val p = player
-        if (p != null && event.action == KeyEvent.ACTION_DOWN && !playerView.isControllerFullyVisible) {
+        // Repeated presses keep seeking while the controls are only up because of a seek.
+        val seeking = !playerView.isControllerFullyVisible || seekFlash
+        if (p != null && event.action == KeyEvent.ACTION_DOWN && seeking) {
             when (event.keyCode) {
-                KeyEvent.KEYCODE_DPAD_LEFT -> { p.seekBack(); playerView.showController(); return true }
-                KeyEvent.KEYCODE_DPAD_RIGHT -> { p.seekForward(); playerView.showController(); return true }
+                KeyEvent.KEYCODE_DPAD_LEFT -> { p.seekBack(); flashControls(); return true }
+                KeyEvent.KEYCODE_DPAD_RIGHT -> { p.seekForward(); flashControls(); return true }
             }
         }
+        if (event.action == KeyEvent.ACTION_DOWN) {
+            seekFlash = false
+            playerView.controllerShowTimeoutMs = CONTROLS_TIMEOUT_MS
+        }
         return playerView.dispatchKeyEvent(event) || super.dispatchKeyEvent(event)
+    }
+
+    private fun flashControls() {
+        seekFlash = true
+        playerView.controllerShowTimeoutMs = SEEK_CONTROLS_TIMEOUT_MS
+        playerView.showController()
     }
 
     companion object {
         const val EXTRA_START = "start"
         const val EXTRA_PART = "part"
+        private const val CONTROLS_TIMEOUT_MS = 2500
+        private const val SEEK_CONTROLS_TIMEOUT_MS = 1500
     }
 }

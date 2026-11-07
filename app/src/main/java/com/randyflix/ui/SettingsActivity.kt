@@ -62,6 +62,15 @@ class SettingsActivity : FragmentActivity() {
             Settings.showIntro = !Settings.showIntro
             showIntroState()
         }
+        val autoplay = findViewById<Button>(R.id.autoplay)
+        fun showAutoplayState() {
+            autoplay.text = if (Settings.autoPlayNext) "Auto-play next episode: On" else "Auto-play next episode: Off"
+        }
+        showAutoplayState()
+        autoplay.setOnClickListener {
+            Settings.autoPlayNext = !Settings.autoPlayNext
+            showAutoplayState()
+        }
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
