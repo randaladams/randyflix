@@ -97,30 +97,56 @@ class Scanner(
                 .flatMap { scanMovieFolder("$folder/${it.name}", it.name, stamp, depth + 1, byId) }
         }
         val main = videos.maxByOrNull { it.size }!!
-        return listOf(buildMovie(folder, name, stamp, main, files, byId["$folder/${main.name}"]?.added))
+        val discs = discGroup(videos, main)
+        // Older indexes keyed a multi-disc movie by its largest disc, so check both for the "added" date.
+        val prevAdded = byId["$folder/${discs.first().name}"]?.added ?: byId["$folder/${main.name}"]?.added
+        return listOf(buildMovie(folder, name, stamp, discs.first(), files, prevAdded, discs))
+    }
+
+    /** The discs that go with [main] ("Movie Disc 1", "Movie CD2", ...) in order, or just [main]. */
+    private fun discGroup(videos: List<SmbEntry>, main: SmbEntry): List<SmbEntry> {
+        val (stem, _) = discOf(main.name.substringBeforeLast('.')) ?: return listOf(main)
+        val group = videos.mapNotNull { v -> discOf(v.name.substringBeforeLast('.'))?.takeIf { it.first == stem }?.let { v to it.second } }
+            .distinctBy { it.second }
+            .sortedBy { it.second }
+        return if (group.size > 1) group.map { it.first } else listOf(main)
     }
 
     private fun buildMovie(
         folder: String, folderName: String?, stamp: Long, video: SmbEntry, files: List<SmbEntry>, prevAdded: Long?,
+        discs: List<SmbEntry> = listOf(video),
     ): Movie {
         val base = video.name.substringBeforeLast('.')
         val own = folderName != null      // movie has its own folder
         val find = finder(folder, files)
+        // tinyMediaManager names artwork after the folder when the video name doesn't fit (multi-disc, renamed files).
+        fun anyEnding(vararg suffixes: String) = files.firstOrNull { f ->
+            !f.isDir && suffixes.any { f.name.endsWith(it, ignoreCase = true) }
+        }?.let { "$folder/${it.name}" }
 
         val nfoPath = if (own) {
-            find("$base.nfo", "movie.nfo") ?: files.firstOrNull { !it.isDir && it.name.endsWith(".nfo", true) }?.let { "$folder/${it.name}" }
+            find("$base.nfo", "$folderName.nfo", "movie.nfo") ?: anyEnding(".nfo")
         } else find("$base.nfo")
         val nfo = nfoPath?.let { readNfo(it) }
 
         val poster = (if (own) find(
-            "$base-poster.jpg", "$base-poster.png", "poster.jpg", "poster.png", "folder.jpg", "folder.png", "cover.jpg", "$base.jpg",
-        ) else find("$base-poster.jpg", "$base-poster.png", "$base.jpg")) ?: nfo?.let { Nfo.remotePoster(it) }
+            "$base-poster.jpg", "$base-poster.png", "$folderName-poster.jpg", "$folderName-poster.png",
+            "poster.jpg", "poster.png", "folder.jpg", "folder.png", "cover.jpg", "$base.jpg",
+        ) ?: anyEnding("-poster.jpg", "-poster.png")
+        else find("$base-poster.jpg", "$base-poster.png", "$base.jpg")) ?: nfo?.let { Nfo.remotePoster(it) }
         val fanart = (if (own) find(
-            "$base-fanart.jpg", "$base-fanart.png", "fanart.jpg", "fanart.png", "backdrop.jpg",
-        ) else find("$base-fanart.jpg", "$base-fanart.png")) ?: nfo?.let { Nfo.remoteFanart(it) }
+            "$base-fanart.jpg", "$base-fanart.png", "$folderName-fanart.jpg", "$folderName-fanart.png",
+            "fanart.jpg", "fanart.png", "backdrop.jpg",
+        ) ?: anyEnding("-fanart.jpg", "-fanart.png")
+        else find("$base-fanart.jpg", "$base-fanart.png")) ?: nfo?.let { Nfo.remoteFanart(it) }
 
         val videoCount = files.count { !it.isDir && isVideo(it.name) && !isExtra(it.name) }
-        val subtitles = findSubtitles(folder, base, files, anyInFolder = own && videoCount <= 1)
+        val parts = if (discs.size > 1) discs.map { d ->
+            val b = d.name.substringBeforeLast('.')
+            Part("$folder/${d.name}", d.size, findSubtitles(folder, b, files, anyInFolder = false))
+        } else emptyList()
+        val subtitles = parts.firstOrNull()?.subtitles
+            ?: findSubtitles(folder, base, files, anyInFolder = own && videoCount <= 1)
 
         val (parsedTitle, parsedYear) = parseName(folderName ?: base)
         val title = nfo?.str("title") ?: parsedTitle
@@ -144,10 +170,11 @@ class Scanner(
             poster = poster,
             fanart = fanart,
             subtitles = subtitles,
-            size = video.size,
+            size = discs.sumOf { it.size },
             videoCodec = streams?.child("video")?.str("codec"),
             audioCodec = streams?.child("audio")?.str("codec"),
             height = streams?.child("video")?.int("height"),
+            parts = parts,
         )
     }
 
@@ -344,6 +371,15 @@ class Scanner(
 
         private val EXTRA = Regex("""(?i)(^|[ ._\-\[(])(sample|trailer)([ ._\-\])]|$)""")
         fun isExtra(name: String) = EXTRA.containsMatchIn(name.substringBeforeLast('.'))
+
+        private val DISC = Regex("""(?i)[ ._\-\[(]*\b(?:disc|disk|cd|dvd|part|pt)[ ._-]*(\d{1,2})\b[\])]?""")
+
+        /** "Ben-Hur (1959) Disc 2" -> ("ben-hur (1959)", 2); null when the name has no disc marker. */
+        fun discOf(base: String): Pair<String, Int>? {
+            val m = DISC.findAll(base).lastOrNull() ?: return null
+            val stem = base.removeRange(m.range).trim(' ', '.', '_', '-').lowercase()
+            return stem to m.groupValues[1].toInt()
+        }
 
         fun isJunk(name: String) = name.startsWith(".") || name.startsWith("@") || name.startsWith("$") ||
             name.startsWith("#") || name.startsWith("_") || name.equals("System Volume Information", true) || name.equals("lost+found", true) ||

@@ -39,11 +39,17 @@ object Library {
     @Volatile private var showIndex: Map<String, Show> = emptyMap()
     @Volatile private var episodeIndex: Map<String, EpisodeRef> = emptyMap()
     private var job: Job? = null
+    /** The saved index was made by an older scanner, so the next scan rescans every folder. */
+    private var outdated = false
 
     fun load(context: Context) {
         file = File(context.filesDir, "library.json")
         if (file.exists()) {
-            runCatching { publish(LibraryJson.decode(file.readText())) }
+            runCatching {
+                val text = file.readText()
+                outdated = LibraryJson.version(text) < LibraryJson.VERSION
+                publish(LibraryJson.decode(text))
+            }
         }
     }
 
@@ -65,11 +71,13 @@ object Library {
 
     fun scan(full: Boolean = false) {
         if (isScanning) return
+        val fullScan = full || outdated
         job = scope.launch {
             _state.value = ScanState.Running("Connecting to ${Settings.host}…")
             try {
-                val result = Scanner(data, full) { _state.value = ScanState.Running(it) }.run()
+                val result = Scanner(data, fullScan) { _state.value = ScanState.Running(it) }.run()
                 publish(result.data)
+                if (result.errors.isEmpty()) outdated = false
                 runCatching {
                     val tmp = File(file.parentFile, "library.json.tmp")
                     tmp.writeText(LibraryJson.encode(result.data))
@@ -88,7 +96,7 @@ object Library {
     /** Daily automatic refresh (and the very first scan). */
     fun scanIfStale() {
         val age = System.currentTimeMillis() - data.lastScan
-        if (data.lastScan == 0L || age > 20L * 60 * 60 * 1000) scan(false)
+        if (outdated || data.lastScan == 0L || age > 20L * 60 * 60 * 1000) scan(false)
     }
 
     // ------------------------------------------------------------------ queries

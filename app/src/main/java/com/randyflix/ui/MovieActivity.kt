@@ -33,6 +33,7 @@ class MovieActivity : FragmentActivity() {
             m.mpaa,
             m.rating?.let { "★ %.1f".format(it) },
             Format.videoInfo(m.videoCodec, m.height, m.audioCodec),
+            m.parts.size.takeIf { it > 1 }?.let { "$it discs" },
         ).joinToString("   ·   ")
         findViewById<TextView>(R.id.tagline).apply {
             text = m.tagline
@@ -45,7 +46,8 @@ class MovieActivity : FragmentActivity() {
         ).joinToString("\n")
 
         findViewById<Button>(R.id.play).setOnClickListener {
-            Nav.play(this, m.id, Playback.resume(m.id)?.position ?: 0L)
+            val r = Playback.resume(m.id)
+            Nav.play(this, m.id, r?.position ?: 0L, r?.part ?: 0)
         }
         findViewById<Button>(R.id.restart).setOnClickListener { Nav.play(this, m.id, 0L) }
         findViewById<Button>(R.id.watched).setOnClickListener {
@@ -72,7 +74,7 @@ class MovieActivity : FragmentActivity() {
 
     private fun bindButtons() {
         val r = Playback.resume(movie.id)
-        findViewById<Button>(R.id.play).text = if (r != null) "Resume (${Format.clock(r.position)})" else "Play"
+        findViewById<Button>(R.id.play).text = if (r != null) "Resume (${Format.resumePoint(r)})" else "Play"
         findViewById<Button>(R.id.restart).visibility = if (r != null) View.VISIBLE else View.GONE
         findViewById<Button>(R.id.watched).text = if (Playback.isWatched(movie.id)) "Mark unwatched" else "Mark watched"
     }

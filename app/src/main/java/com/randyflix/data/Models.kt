@@ -9,8 +9,15 @@ data class Subtitle(
     val lang: String?,
 )
 
+/** One disc of a multi-disc movie. */
+data class Part(
+    val path: String,
+    val size: Long,
+    val subtitles: List<Subtitle>,
+)
+
 data class Movie(
-    val id: String,              // path of the video file
+    val id: String,              // path of the video file (disc 1 for multi-disc movies)
     val folder: String,
     val stamp: Long,             // folder modified time when scanned (for incremental rescans)
     val added: Long,
@@ -27,11 +34,15 @@ data class Movie(
     val poster: String?,         // smb path or http url
     val fanart: String?,
     val subtitles: List<Subtitle>,
-    val size: Long,
+    val size: Long,              // total of all discs
     val videoCodec: String?,
     val audioCodec: String?,
     val height: Int?,
-)
+    val parts: List<Part> = emptyList(), // discs in order; empty for a single-file movie
+) {
+    /** The files to play, in order: every disc, or just the one video. */
+    val files: List<Part> get() = parts.ifEmpty { listOf(Part(id, size, subtitles)) }
+}
 
 data class Episode(
     val id: String,              // path of the video file
@@ -80,8 +91,13 @@ data class LibraryData(val movies: List<Movie>, val shows: List<Show>, val lastS
 // ---------------------------------------------------------------- JSON
 
 object LibraryJson {
+    /** Bump when the scanner learns something new, so existing installs do one full rescan. */
+    const val VERSION = 2
+
+    fun version(text: String): Int = runCatching { JSONObject(text).optInt("version", 1) }.getOrDefault(1)
+
     fun encode(d: LibraryData): String = JSONObject().apply {
-        put("version", 1)
+        put("version", VERSION)
         put("lastScan", d.lastScan)
         put("movies", JSONArray().apply { d.movies.forEach { put(movie(it)) } })
         put("shows", JSONArray().apply { d.shows.forEach { put(show(it)) } })
@@ -109,6 +125,9 @@ object LibraryJson {
         put("genres", JSONArray(m.genres)); putOpt("set", m.collection); putOpt("poster", m.poster)
         putOpt("fanart", m.fanart); put("subs", subs(m.subtitles)); put("size", m.size)
         putOpt("vcodec", m.videoCodec); putOpt("acodec", m.audioCodec); putOpt("height", m.height)
+        if (m.parts.isNotEmpty()) put("parts", JSONArray().apply {
+            m.parts.forEach { put(JSONObject().put("p", it.path).put("size", it.size).put("subs", subs(it.subtitles))) }
+        })
     }
 
     private fun movie(o: JSONObject) = Movie(
@@ -118,6 +137,7 @@ object LibraryJson {
         genres = o.strings("genres"), collection = o.s("set"), poster = o.s("poster"), fanart = o.s("fanart"),
         subtitles = subs(o), size = o.optLong("size", 0L), videoCodec = o.s("vcodec"), audioCodec = o.s("acodec"),
         height = o.i("height"),
+        parts = o.objects("parts").map { Part(it.getString("p"), it.optLong("size", 0L), subs(it)) },
     )
 
     private fun episode(e: Episode) = JSONObject().apply {

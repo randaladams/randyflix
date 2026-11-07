@@ -19,7 +19,7 @@ object Nav {
             is Movie -> activity.startActivity(Intent(activity, MovieActivity::class.java).putExtra(EXTRA_ID, item.id))
             is Show -> activity.startActivity(Intent(activity, ShowActivity::class.java).putExtra(EXTRA_ID, item.id))
             is EpisodeRef -> playWithPrompt(activity, item.episode.id, item.episode.title)
-            is ContinueItem -> play(activity, item.id, item.resume?.position ?: 0L)
+            is ContinueItem -> play(activity, item.id, item.resume?.position ?: 0L, item.resume?.part ?: 0)
             is ActionItem -> when (item.id) {
                 ACTION_MOVIES -> activity.startActivity(GridActivity.intent(activity, GridFragment.MODE_MOVIES, "Movies"))
                 ACTION_SHOWS -> activity.startActivity(GridActivity.intent(activity, GridFragment.MODE_SHOWS, "TV Shows"))
@@ -37,9 +37,11 @@ object Nav {
         }
     }
 
-    fun play(activity: Activity, id: String, startMs: Long) {
+    /** [part] is the disc to start on, for multi-disc movies. */
+    fun play(activity: Activity, id: String, startMs: Long, part: Int = 0) {
         activity.startActivity(
-            Intent(activity, PlayerActivity::class.java).putExtra(EXTRA_ID, id).putExtra(PlayerActivity.EXTRA_START, startMs)
+            Intent(activity, PlayerActivity::class.java).putExtra(EXTRA_ID, id)
+                .putExtra(PlayerActivity.EXTRA_START, startMs).putExtra(PlayerActivity.EXTRA_PART, part)
         )
     }
 
@@ -52,8 +54,8 @@ object Nav {
         }
         AlertDialog.Builder(activity)
             .setTitle(title)
-            .setItems(arrayOf("Resume from ${Format.clock(r.position)}", "Start from the beginning")) { _, which ->
-                play(activity, id, if (which == 0) r.position else 0L)
+            .setItems(arrayOf("Resume from ${Format.resumePoint(r)}", "Start from the beginning")) { _, which ->
+                if (which == 0) play(activity, id, r.position, r.part) else play(activity, id, 0L)
             }
             .show()
     }

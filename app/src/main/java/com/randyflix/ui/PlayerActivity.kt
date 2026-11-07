@@ -22,6 +22,7 @@ import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.ui.PlayerView
 import com.randyflix.R
 import com.randyflix.data.Library
+import com.randyflix.data.Movie
 import com.randyflix.data.Playback
 import com.randyflix.data.Subtitle
 import com.randyflix.smb.Smb
@@ -29,13 +30,15 @@ import com.randyflix.smb.SmbDataSource
 
 /**
  * Full-screen player. For TV episodes it queues the rest of the show, so the next episode
- * starts automatically. Saves the resume position every 10 seconds and on exit.
+ * starts automatically; for multi-disc movies it queues every disc. Saves the resume
+ * position every 10 seconds and on exit.
  */
 @OptIn(UnstableApi::class)
 class PlayerActivity : FragmentActivity() {
     private lateinit var playerView: PlayerView
     private var player: ExoPlayer? = null
-    private var currentId: String? = null
+    private var currentId: String? = null   // episode being played, or the movie (for every disc)
+    private var movie: Movie? = null
     private val handler = Handler(Looper.getMainLooper())
     private val saver = object : Runnable {
         override fun run() {
@@ -69,7 +72,10 @@ class PlayerActivity : FragmentActivity() {
         val id = currentId ?: intent.getStringExtra(Nav.EXTRA_ID) ?: return finish()
         val start = if (currentId != null) Playback.resume(id)?.position ?: 0L
         else intent.getLongExtra(EXTRA_START, 0L)
+        val part = if (currentId != null) Playback.resume(id)?.part ?: 0
+        else intent.getIntExtra(EXTRA_PART, 0)
 
+        movie = Library.movie(id)
         val queue = buildQueue(id)
         if (queue.isEmpty()) {
             finish()
@@ -88,6 +94,7 @@ class PlayerActivity : FragmentActivity() {
 
         p.addListener(object : Player.Listener {
             override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                if (movie != null) return   // next disc of the same movie
                 val previous = currentId
                 if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO && previous != null) {
                     Playback.setWatched(previous, true)
@@ -107,7 +114,7 @@ class PlayerActivity : FragmentActivity() {
             }
         })
 
-        p.setMediaItems(queue, 0, start)
+        p.setMediaItems(queue, if (movie != null) part.coerceIn(0, queue.size - 1) else 0, start)
         p.prepare()
         p.playWhenReady = true
         handler.postDelayed(saver, 10_000)
@@ -115,7 +122,10 @@ class PlayerActivity : FragmentActivity() {
 
     private fun buildQueue(id: String): List<MediaItem> {
         Library.movie(id)?.let { m ->
-            return listOf(mediaItem(m.id, m.title, m.subtitles))
+            val files = m.files
+            return files.mapIndexed { i, f ->
+                mediaItem(f.path, if (files.size > 1) "${m.title} · Disc ${i + 1} of ${files.size}" else m.title, f.subtitles)
+            }
         }
         val ref = Library.episode(id) ?: return emptyList()
         val eps = ref.show.ordered
@@ -155,7 +165,12 @@ class PlayerActivity : FragmentActivity() {
         val duration = p.duration
         if (duration == C.TIME_UNSET || duration <= 0) return
         if (p.playbackState == Player.STATE_ENDED) return
-        Playback.save(id, p.currentPosition, duration)
+        if (movie != null) {
+            val part = p.currentMediaItemIndex
+            Playback.save(id, p.currentPosition, duration, part, lastPart = part >= p.mediaItemCount - 1)
+        } else {
+            Playback.save(id, p.currentPosition, duration)
+        }
     }
 
     private fun showError(error: PlaybackException) {
@@ -183,5 +198,6 @@ class PlayerActivity : FragmentActivity() {
 
     companion object {
         const val EXTRA_START = "start"
+        const val EXTRA_PART = "part"
     }
 }

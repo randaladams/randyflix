@@ -24,8 +24,13 @@ object Format {
 
     fun left(r: Playback.Resume): String {
         val min = (r.remaining / 60000.0).roundToInt()
-        return if (min >= 60) "${min / 60}h ${min % 60}m left" else "${min}m left"
+        val left = if (min >= 60) "${min / 60}h ${min % 60}m left" else "${min}m left"
+        return if (r.part > 0) "Disc ${r.part + 1} · $left" else left
     }
+
+    /** "1:02:03", or "disc 2, 0:45:12" past the first disc of a multi-disc movie. */
+    fun resumePoint(r: Playback.Resume): String =
+        if (r.part > 0) "disc ${r.part + 1}, ${clock(r.position)}" else clock(r.position)
 
     /** Playback status of a single video, for cards and lists. */
     fun status(id: String): String? {
