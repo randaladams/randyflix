@@ -27,18 +27,6 @@ object Settings {
         get() = str("tv", "tv")
         set(v) = put("tv", v.trim('/', '\\', ' '))
 
-    var user: String
-        get() = str("user", "")
-        set(v) = put("user", v)
-
-    var password: String
-        get() = prefs.getString("password", "") ?: ""
-        set(v) = prefs.edit().putString("password", v).apply()
-
-    var domain: String
-        get() = str("domain", "")
-        set(v) = put("domain", v)
-
     /** Play the intro clip when the app starts. */
     var showIntro: Boolean
         get() = prefs.getBoolean("intro", true)

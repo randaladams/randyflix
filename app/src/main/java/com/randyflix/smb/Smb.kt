@@ -66,17 +66,11 @@ object Smb {
             .build()
         val c = SMBClient(config)
         val newConn = c.connect(Settings.host)
-        val user = Settings.user
-        val newSess = if (user.isBlank()) {
-            try {
-                newConn.authenticate(AuthenticationContext.guest())
-            } catch (e: Exception) {
-                newConn.authenticate(AuthenticationContext.anonymous())
-            }
-        } else {
-            newConn.authenticate(
-                AuthenticationContext(user, Settings.password.toCharArray(), Settings.domain.ifBlank { null })
-            )
+        // Shares are open: guest first, anonymous as a fallback.
+        val newSess = try {
+            newConn.authenticate(AuthenticationContext.guest())
+        } catch (e: Exception) {
+            newConn.authenticate(AuthenticationContext.anonymous())
         }
         client = c
         connection = newConn

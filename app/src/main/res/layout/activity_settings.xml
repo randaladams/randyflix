@@ -35,15 +35,6 @@
 
             <TextView style="@style/FieldLabel" android:text="TV shows folder" />
             <EditText android:id="@+id/tv" style="@style/Field" android:hint="tv" />
-
-            <TextView style="@style/FieldLabel" android:text="Username (leave blank for guest)" />
-            <EditText android:id="@+id/user" style="@style/Field" />
-
-            <TextView style="@style/FieldLabel" android:text="Password" />
-            <EditText android:id="@+id/password" style="@style/Field" android:inputType="textPassword" />
-
-            <TextView style="@style/FieldLabel" android:text="Domain / workgroup (usually blank)" />
-            <EditText android:id="@+id/domain" style="@style/Field" />
         </LinearLayout>
 
         <LinearLayout

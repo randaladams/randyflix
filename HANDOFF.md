@@ -24,7 +24,7 @@ A sideloaded Fire TV app for browsing and playing my own movie and TV library, s
 - **TV:** season tabs and an episode list with thumbnails and progress bars. It opens on the next unwatched episode. Holding Select marks an episode or a whole season watched.
 - **Player:** streams over SMB. Supports sidecar and embedded subtitles, an audio-track picker, Left/Right for back 10 s / forward 30 s, resume saved every 10 s, and auto-play of the next episode.
 - **Intro:** `res/raw/intro.mp4` (2.2 s, 720p H.264/AAC, made in Clipchamp) plays once at startup. Any button skips it, and Settings can turn it off.
-- **Settings:** server, share paths, credentials, Save and test, Refresh, Full rescan, Clear artwork cache, and the intro toggle.
+- **Settings:** server, share paths (guest access only, no credentials), Save and test, Refresh, Full rescan, Clear artwork cache, and the intro toggle.
 
 ## 3. Environment facts
 

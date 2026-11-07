@@ -50,7 +50,7 @@ https://github.com/randaladams/randyflix/releases/download/latest/randyflix.apk
 3. Open RandyFlix. On first launch it opens **Settings**:
    - **Server**: the Pi's IP address. Its hostname (e.g. `raspberrypi`) only works if your network resolves it.
    - **Movies folder** / **TV folder**: the Samba share names, e.g. `storage` and `storage2`. If the share is higher up, add the subfolder, e.g. `media/storage`.
-   - **Username / Password**: leave blank if the shares allow guest access.
+   - No username or password: the app connects as a guest, so the shares must allow guest access.
    - Choose **Save and test connection**. The first scan starts automatically.
 
 Updates install over the old version with no uninstall needed, so resume points and watched marks are kept. Every build is signed with the same key, `app/randyflix.keystore`. That key exists only so personal sideloaded builds can update in place.

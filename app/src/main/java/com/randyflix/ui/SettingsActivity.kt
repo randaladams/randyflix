@@ -29,16 +29,10 @@ class SettingsActivity : FragmentActivity() {
         val host = findViewById<EditText>(R.id.host)
         val movies = findViewById<EditText>(R.id.movies)
         val tv = findViewById<EditText>(R.id.tv)
-        val user = findViewById<EditText>(R.id.user)
-        val password = findViewById<EditText>(R.id.password)
-        val domain = findViewById<EditText>(R.id.domain)
 
         host.setText(Settings.host)
         movies.setText(Settings.moviesPath)
         tv.setText(Settings.tvPath)
-        user.setText(Settings.user)
-        password.setText(Settings.password)
-        domain.setText(Settings.domain)
 
         @Suppress("DEPRECATION")
         val version = packageManager.getPackageInfo(packageName, 0).versionName
@@ -51,9 +45,6 @@ class SettingsActivity : FragmentActivity() {
             Settings.host = host.text.toString()
             Settings.moviesPath = movies.text.toString()
             Settings.tvPath = tv.text.toString()
-            Settings.user = user.text.toString()
-            Settings.password = password.text.toString()
-            Settings.domain = domain.text.toString()
             testConnection(scanAfter = true, full = pathsChanged)
         }
         findViewById<Button>(R.id.refresh).setOnClickListener { Library.scan(false) }
