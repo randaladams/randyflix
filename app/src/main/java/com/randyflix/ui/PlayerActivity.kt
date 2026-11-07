@@ -64,8 +64,8 @@ class PlayerActivity : TvActivity() {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         setContentView(R.layout.activity_player)
         playerView = findViewById(R.id.player_view)
-        // Date and time while paused or while the controls are up; never over playing video.
-        clock = Screen.clock(this)
+        // The time, upper right, while paused or while the controls are up; never over playing video.
+        clock = Screen.bigClock(this)
         clock.visibility = View.GONE
         menu = PlayerMenu(this) { if (resumeAfterMenu) player?.playWhenReady = true }
         playerView.setControllerVisibilityListener(PlayerView.ControllerVisibilityListener { v ->

@@ -1,7 +1,9 @@
 package com.randyflix.ui
 
-import android.content.Intent
 import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.leanback.app.BrowseSupportFragment
 import androidx.leanback.widget.ArrayObjectAdapter
@@ -20,7 +22,7 @@ import com.randyflix.data.Library
 import com.randyflix.data.LiveTv
 import kotlinx.coroutines.launch
 
-/** Home screen: Continue Watching, Browse, Recently Added rows. */
+/** Home screen: Continue Watching, Live TV and Recently Added rows. Movies, TV Shows, Search and Settings are in the top bar. */
 class MainFragment : BrowseSupportFragment() {
     private val rowsAdapter = ArrayObjectAdapter(ListRowPresenter())
     private val rowIds = ArrayList<String>()
@@ -35,12 +37,9 @@ class MainFragment : BrowseSupportFragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        title = getString(R.string.app_name)
         headersState = HEADERS_DISABLED
         isHeadersTransitionOnBackEnabled = false
         brandColor = ContextCompat.getColor(requireContext(), R.color.brand)
-        searchAffordanceColor = ContextCompat.getColor(requireContext(), R.color.accent)
-        setOnSearchClickedListener { startActivity(Intent(requireContext(), SearchActivity::class.java)) }
         adapter = rowsAdapter
         onItemViewClickedListener = OnItemViewClickedListener { _, item, _, _ ->
             if (item is Channel) Nav.watch(requireActivity(), item, LiveTv.LIST_FAVORITES) else Nav.open(requireActivity(), item)
@@ -55,6 +54,9 @@ class MainFragment : BrowseSupportFragment() {
         }
     }
 
+    /** No Leanback title or search button: the top bar replaces them, and Up from the first row goes there. */
+    override fun onInflateTitleView(inflater: LayoutInflater, parent: ViewGroup, savedInstanceState: Bundle?): View? = null
+
     override fun onResume() {
         super.onResume()
         buildRows()
@@ -66,15 +68,6 @@ class MainFragment : BrowseSupportFragment() {
 
         val cont = Library.continueWatching()
         if (cont.isNotEmpty()) rows += Triple("continue", "Continue Watching", cont)
-
-        val actions = listOf(
-            ActionItem(Nav.ACTION_MOVIES, "Movies", "${data.movies.size} titles", R.drawable.ic_movies),
-            ActionItem(Nav.ACTION_SHOWS, "TV Shows", "${data.shows.size} shows", R.drawable.ic_tv),
-            ActionItem(Nav.ACTION_SEARCH, "Search", null, R.drawable.ic_search),
-            ActionItem(Nav.ACTION_REFRESH, "Refresh Library", null, R.drawable.ic_refresh),
-            ActionItem(Nav.ACTION_SETTINGS, "Settings", null, R.drawable.ic_settings),
-        )
-        rows += Triple("browse", "Browse", actions)
 
         // Live TV: the favorites, then My channels and the channel guide.
         if (LiveTv.channels.isNotEmpty() || LiveTv.catalog.isNotEmpty()) {

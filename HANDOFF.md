@@ -19,7 +19,7 @@ The next real step is installing it on the Firestick and running it against the 
 A sideloaded Fire TV app for browsing and playing my own movie and TV library, stored on a Raspberry Pi 3 that shares it over Samba. It's like Kodi, but trimmed down to only what this collection needs.
 
 **Features in this version**
-- **Home screen:** Continue Watching (in-progress items plus the next episode of each show I'm watching), a Browse row (Movies, TV Shows, Search, Refresh Library, Settings), Recently Added Movies, and Recently Updated Shows.
+- **Home screen:** Continue Watching (in-progress items plus the next episode of each show I'm watching), Live TV (favorites, My channels, Channel guide), Recently Added Movies, and Recently Updated Shows.
 - **Movies:** an A–Z poster grid. Each movie page has fanart, poster, plot, rating, runtime, codec info, the subtitle list, Play/Resume, Start over, Mark watched, and a link to its collection.
 - **TV:** season tabs and an episode list with thumbnails and progress bars. It opens on the next unwatched episode. Holding Select marks an episode or a whole season watched.
 - **Player:** streams over SMB. Supports sidecar and embedded subtitles, an audio-track picker, Left/Right for back 10 s / forward 30 s, resume saved every 10 s, and auto-play of the next episode. ☰ opens a menu with bookmarks, subtitles and audio language.
@@ -93,7 +93,8 @@ com/randyflix/
   ui/PlayerActivity              playback, queueing, resume, error dialog
   ui/LiveActivity                live TV: Up/Down channel change, channel banner
   ui/SettingsActivity            settings + connection test
-  ui/Screen.kt                   ClockView + daily background, added to each menu screen
+  ui/Screen.kt                   ClockView, pause-screen time, daily background
+  ui/TopBar.kt                   tab bar + time on every menu screen; tabs route through MainActivity (EXTRA_TAB)
   ui/PlayerMenu.kt               ☰ side panel for both players; TrackChoice = CC on/off, caption/audio language
   ui/GuideActivity.kt            channel guide: categories, channel rows, muted live preview
   ui/ScreenSaver.kt              screen saver slideshow + TvActivity (base for menu screens and the player)
@@ -108,6 +109,7 @@ com/randyflix/
 4. Possible later features (none started): genre rows or filters, sort options, the Pi-side indexer (only if needed), a "next episode" countdown, and a Live TV program guide (Now/Next from XMLTV).
 5. **Live TV** (added 2026-11-06): playlist at `\\adamsnas\MOVIES\_randyflix\channels.m3u` with 6 Brazilian channels (novelas, SBT, CNN Brasil) picked from https://iptv-org.github.io/iptv/countries/br.m3u. Globo, Record and Band returned 403 from this network (likely Brazil-only). Not yet tested on the Firestick.
 6. **Added 2026-11-07** (not yet tested on the Firestick): clock on menu screens and the pause screen; daily backgrounds from `_randyflix\backgrounds`; Live TV Favorites (`#SECTION:Favorites`, max 5, editable with ☰, stored in the `live` prefs) and an All channels grid (by name or most watched); ☰ player menu with bookmarks (`b:<id>` in the playback prefs), subtitle and audio choice; exit confirmation on the home screen. The old `_live` folder was renamed to `_randyflix`.
+7. **Top bar** (not yet tested on the Firestick): tabs Home / Movies / TV Shows / Live TV (channel guide) / Search / Settings and a large time-only clock, replacing the date-and-time pill and the home Browse row. Leanback titles are turned off (null title on Browse, an empty `NoTitle` on grids) and `browseRowsMarginTop` is 128dp. Up from a screen lands on the current tab (`TopBar.addFocusables`).
 
 ## 8. Moving to a new machine
 

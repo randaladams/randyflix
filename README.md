@@ -10,7 +10,7 @@ A small, self-contained Fire TV app for browsing and playing my own movie and TV
 - Remembers where you stopped, marks things watched, shows Continue Watching and Next Up, and plays the next episode automatically (Settings can turn this off).
 - Bookmarks: ☰ in the player saves a spot; jump back from the same menu, the movie page, or the episode's play prompt.
 - Captions start off for every video and channel; CC in the ☰ panel turns them on until you leave the player. Live channels show captions only when the stream announces them.
-- Date and time at the top of every menu screen and the pause screen (12- or 24-hour in Settings).
+- A bar across the top of every menu screen: Home · Movies · TV Shows · Live TV · Search · Settings on the left, the time (large) on the right. It stays put while the screen scrolls. Press Up from the top of any screen to reach it; Back from any tab returns Home. The pause screen shows the time in the upper right; the screen saver shows the date and time. 12- or 24-hour in Settings.
 - Screen saver: a slideshow of the background pictures with a drifting clock, on the menus or when a movie or show is paused (Settings → Screen saver: 3, 10 or 30 minutes, or Never). Any button wakes it.
 - Settings is a list of sections on the left (About, Clock, Connection, Library, Live TV, Playback, Screen saver); moving onto one shows it on the right.
 

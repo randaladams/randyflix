@@ -38,7 +38,7 @@ class MainActivity : TvActivity() {
         }
 
         Screen.background(this)
-        Screen.clock(this)
+        Screen.topBar(this, Tab.HOME)
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() = confirmExit()
         })
@@ -73,6 +73,13 @@ class MainActivity : TvActivity() {
         }
     }
 
+    /** A top-bar tab chosen on another screen comes back through Home, so Back from it returns here. */
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        val tab = intent.getStringExtra(EXTRA_TAB)?.let { name -> Tab.values().firstOrNull { it.name == name } }
+        if (tab != null && tab != Tab.HOME) openTab(this, tab)
+    }
+
     /** "Exit RandyFlix?" with Yes selected; pressing Back again also exits. */
     private fun confirmExit() {
         val dialog = AlertDialog.Builder(this)
@@ -103,5 +110,16 @@ class MainActivity : TvActivity() {
     private fun show(view: TextView, text: String) {
         view.text = text
         view.visibility = View.VISIBLE
+    }
+
+    companion object {
+        const val EXTRA_TAB = "tab"
+
+        fun openTab(activity: MainActivity, tab: Tab) {
+            TopBar.intentFor(activity, tab)?.let {
+                activity.startActivity(it)
+                activity.overridePendingTransition(0, 0)
+            }
+        }
     }
 }

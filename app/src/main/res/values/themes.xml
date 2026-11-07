@@ -3,6 +3,8 @@
     <style name="Theme.RandyFlix" parent="Theme.Leanback">
         <item name="android:windowBackground">@color/bg</item>
         <item name="android:colorAccent">@color/accent</item>
+        <!-- No Leanback title (the top bar replaces it), so rows and grids can start higher. -->
+        <item name="browseRowsMarginTop">128dp</item>
     </style>
 
     <style name="Theme.RandyFlix.Player" parent="Theme.RandyFlix">

@@ -20,7 +20,7 @@ class SearchActivity : TvActivity() {
         }
 
         Screen.background(this)
-        Screen.clock(this)
+        Screen.topBar(this, Tab.SEARCH)
 
         val query = findViewById<EditText>(R.id.query)
         // Search only when Enter/Search is pressed; querying on every keystroke is too slow on the stick.

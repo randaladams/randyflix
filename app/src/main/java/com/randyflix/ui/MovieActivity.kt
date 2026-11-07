@@ -66,7 +66,7 @@ class MovieActivity : TvActivity() {
             }
         }
         findViewById<Button>(R.id.play).requestFocus()
-        Screen.clock(this)
+        Screen.topBar(this, Tab.MOVIES, isTabRoot = false)
     }
 
     /** Pick a bookmark to play from (Menu button in the player adds them). */

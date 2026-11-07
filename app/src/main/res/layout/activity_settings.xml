@@ -12,7 +12,7 @@
         android:layout_weight="1"
         android:orientation="horizontal"
         android:paddingLeft="48dp"
-        android:paddingTop="64dp"
+        android:paddingTop="92dp"
         android:paddingRight="48dp"
         android:paddingBottom="24dp">
 
@@ -79,7 +79,7 @@
 
                 <LinearLayout android:id="@+id/sec_clock" style="@style/SettingsSection">
                     <TextView style="@style/SectionTitle" android:text="Clock" />
-                    <TextView style="@style/SectionHint" android:text="Date and time shown at the top of the menus and the pause screen." />
+                    <TextView style="@style/SectionHint" android:text="The time in the upper right of the menus and the pause screen, and the date and time on the screen saver." />
                     <Button android:id="@+id/clock" style="@style/TvButton" android:text="Clock: 12-hour" />
                 </LinearLayout>
 

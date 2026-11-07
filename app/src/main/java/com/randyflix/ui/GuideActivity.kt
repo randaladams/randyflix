@@ -82,7 +82,7 @@ class GuideActivity : TvActivity() {
         recycler.adapter = adapter
         recycler.itemAnimator = null
         Screen.background(this)
-        Screen.clock(this)
+        Screen.topBar(this, Tab.LIVE)
 
         kind = savedInstanceState?.getString(STATE_KIND) ?: LiveTv.LIST_ALL
         buildCategories()

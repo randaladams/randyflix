@@ -4,6 +4,11 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.view.KeyEvent
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.leanback.widget.BrowseFrameLayout
+import androidx.leanback.widget.TitleViewAdapter
 import androidx.core.os.bundleOf
 import androidx.leanback.app.VerticalGridSupportFragment
 import androidx.leanback.widget.ArrayObjectAdapter
@@ -43,6 +48,16 @@ class GridFragment : VerticalGridSupportFragment() {
             mode == MODE_SHOWS -> setItems(Library.data.shows.sortedBy { it.sortTitle })
             mode.startsWith(MODE_COLLECTION) -> setItems(Library.collection(mode.removePrefix(MODE_COLLECTION)))
         }
+    }
+
+    /** No Leanback title: the screen's top bar shows where you are. */
+    override fun onInflateTitleView(inflater: LayoutInflater, parent: ViewGroup, savedInstanceState: Bundle?): View =
+        NoTitle(inflater.context)
+
+    override fun onStart() {
+        super.onStart()
+        // Leanback sends Up to its (empty) title; let it go to the top bar instead.
+        view?.findViewById<BrowseFrameLayout>(androidx.leanback.R.id.grid_frame)?.setOnFocusSearchListener(null)
     }
 
     override fun onResume() {
@@ -88,7 +103,13 @@ class GridActivity : TvActivity() {
                 .commit()
         }
         Screen.background(this)
-        Screen.clock(this)
+        val mode = intent.getStringExtra(GridFragment.ARG_MODE) ?: GridFragment.MODE_MOVIES
+        when {
+            mode == GridFragment.MODE_MOVIES -> Screen.topBar(this, Tab.MOVIES)
+            mode == GridFragment.MODE_SHOWS -> Screen.topBar(this, Tab.SHOWS)
+            mode == GridFragment.MODE_CHANNELS -> Screen.topBar(this, Tab.LIVE, isTabRoot = false)
+            else -> Screen.topBar(this, Tab.MOVIES, isTabRoot = false)   // a collection
+        }
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
@@ -105,4 +126,19 @@ class GridActivity : TvActivity() {
                 .putExtra(GridFragment.ARG_MODE, mode)
                 .putExtra(GridFragment.ARG_TITLE, title)
     }
+}
+
+/** An empty stand-in for the Leanback grid's title (the grid needs one to exist). */
+@android.annotation.SuppressLint("ViewConstructor")
+private class NoTitle(context: Context) : View(context), TitleViewAdapter.Provider {
+    private val adapter = object : TitleViewAdapter() {
+        override fun getSearchAffordanceView(): View? = null
+    }
+
+    init {
+        id = androidx.leanback.R.id.browse_title_group
+        isFocusable = false
+    }
+
+    override fun getTitleViewAdapter(): TitleViewAdapter = adapter
 }

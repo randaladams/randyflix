@@ -31,7 +31,7 @@ class SettingsActivity : TvActivity() {
         setContentView(R.layout.activity_settings)
         status = findViewById(R.id.status)
         Screen.background(this)
-        clock = Screen.clock(this)
+        clock = Screen.topBar(this, Tab.SETTINGS).clock
 
         val host = findViewById<EditText>(R.id.host)
         val movies = findViewById<EditText>(R.id.movies)

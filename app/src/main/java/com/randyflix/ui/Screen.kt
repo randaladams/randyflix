@@ -3,6 +3,7 @@ package com.randyflix.ui
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Color
+import android.graphics.Typeface
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
@@ -22,16 +23,28 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-/** Shared screen furniture: the clock and the daily background picture. */
+/** Shared screen furniture: the top bar, the pause-screen time and the daily background picture. */
 object Screen {
-    /** Adds the date/time clock at the top centre of the screen. */
-    fun clock(activity: FragmentActivity): ClockView {
+    /** Adds the top bar (tabs and time). [isTabRoot]: this screen is [current] itself, not a page inside it. */
+    fun topBar(activity: FragmentActivity, current: Tab, isTabRoot: Boolean = true): TopBar =
+        TopBar.add(activity, current, isTabRoot)
+
+    /** The large time in the upper right, with no bar behind it (the pause screen). */
+    fun bigClock(activity: FragmentActivity): ClockView {
         val root = activity.findViewById<ViewGroup>(android.R.id.content)
-        val clock = ClockView(activity)
+        val clock = ClockView(activity, withDate = false).apply {
+            background = null
+            textSize = 34f
+            typeface = Typeface.create("sans-serif-light", Typeface.NORMAL)
+            setShadowLayer(8f, 0f, 2f, Color.BLACK)
+        }
         root.addView(clock, FrameLayout.LayoutParams(
             ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT,
-            Gravity.TOP or Gravity.CENTER_HORIZONTAL,
-        ).apply { topMargin = Format.dp(activity, 18) })
+            Gravity.TOP or Gravity.END,
+        ).apply {
+            topMargin = Format.dp(activity, 14)
+            marginEnd = Format.dp(activity, 40)
+        })
         return clock
     }
 
@@ -67,9 +80,12 @@ object Screen {
     }
 }
 
-/** "Sat, Nov 7 · 7:42 PM", updated on the minute. 12 or 24 hour per Settings. */
+/**
+ * "Sat, Nov 7 · 7:42 PM" (the screen saver), or just "7:42 PM" with [withDate] false (the top
+ * bar and pause screen). Updated on the minute; 12 or 24 hour per Settings.
+ */
 @SuppressLint("AppCompatCustomView")
-class ClockView(context: Context) : TextView(context) {
+class ClockView(context: Context, private val withDate: Boolean = true) : TextView(context) {
     private val tick = object : Runnable {
         override fun run() {
             update()
@@ -90,7 +106,8 @@ class ClockView(context: Context) : TextView(context) {
     }
 
     fun update() {
-        val pattern = if (Settings.clock24) "EEE, MMM d  ·  HH:mm" else "EEE, MMM d  ·  h:mm a"
+        val time = if (Settings.clock24) "HH:mm" else "h:mm a"
+        val pattern = if (withDate) "EEE, MMM d  ·  $time" else time
         text = SimpleDateFormat(pattern, Locale.getDefault()).format(Date())
     }
 
