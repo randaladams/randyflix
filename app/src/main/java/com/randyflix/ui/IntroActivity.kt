@@ -30,6 +30,7 @@ class IntroActivity : FragmentActivity() {
     private val handler = Handler(Looper.getMainLooper())
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        KeyClicks.apply(this)
         super.onCreate(savedInstanceState)
         // Start refreshing the library while the clip plays.
         if (Settings.isConfigured) Library.scanIfStale()

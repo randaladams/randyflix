@@ -96,6 +96,16 @@ class SettingsActivity : TvActivity() {
             Settings.clock24 = !Settings.clock24
             showClockState()
         }
+        val clicks = findViewById<Button>(R.id.key_clicks)
+        fun showClicksState() {
+            clicks.text = if (Settings.keyClicks) "Key clicks: On" else "Key clicks: Off"
+        }
+        showClicksState()
+        clicks.setOnClickListener {
+            Settings.keyClicks = !Settings.keyClicks
+            showClicksState()
+            clicksChangedHere()
+        }
         val order = findViewById<Button>(R.id.channel_order)
         fun showOrderState() {
             order.text = if (Settings.channelsByUse) "My channels order: Most watched" else "My channels order: By name"
@@ -157,6 +167,7 @@ class SettingsActivity : TvActivity() {
             R.id.nav_live to R.id.sec_live,
             R.id.nav_playback to R.id.sec_playback,
             R.id.nav_saver to R.id.sec_saver,
+            R.id.nav_sound to R.id.sec_sound,
         )
         fun show(nav: Int) {
             for ((n, sec) in sections) {

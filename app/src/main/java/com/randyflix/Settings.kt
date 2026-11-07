@@ -60,6 +60,11 @@ object Settings {
         set(v) = prefs.edit().putBoolean("chsort_use", v).apply()
 
     /** Start the next episode automatically when one ends. */
+    /** The click the Fire TV plays as the highlight moves and on Select. */
+    var keyClicks: Boolean
+        get() = prefs.getBoolean("keyclicks", true)
+        set(v) = prefs.edit().putBoolean("keyclicks", v).apply()
+
     var autoPlayNext: Boolean
         get() = prefs.getBoolean("autoplay", true)
         set(v) = prefs.edit().putBoolean("autoplay", v).apply()

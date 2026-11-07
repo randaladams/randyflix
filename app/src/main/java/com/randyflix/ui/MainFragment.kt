@@ -18,6 +18,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.randyflix.R
 import com.randyflix.data.ActionItem
 import com.randyflix.data.Channel
+import com.randyflix.data.ContinueItem
 import com.randyflix.data.Library
 import com.randyflix.data.LiveTv
 import kotlinx.coroutines.launch
@@ -28,11 +29,11 @@ class MainFragment : BrowseSupportFragment() {
     private val rowIds = ArrayList<String>()
     private var selected: Any? = null
 
-    /** The ☰ button: favorites menu on a channel tile. Returns true if handled. */
-    fun onMenuKey(): Boolean {
-        val ch = selected as? Channel ?: return false
-        Nav.channelMenu(requireActivity(), ch, LiveTv.LIST_FAVORITES)
-        return true
+    /** The ☰ button: a channel tile's menu, or a Continue Watching tile's. Returns true if handled. */
+    fun onMenuKey(): Boolean = when (val item = selected) {
+        is Channel -> { Nav.channelMenu(requireActivity(), item, LiveTv.LIST_FAVORITES); true }
+        is ContinueItem -> { Nav.continueMenu(requireActivity(), item) { buildRows() }; true }
+        else -> false
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

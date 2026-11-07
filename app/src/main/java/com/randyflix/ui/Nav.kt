@@ -79,6 +79,31 @@ object Nav {
             .show()
     }
 
+    /** The ☰ menu on a Continue Watching tile. [changed] redraws the home screen. */
+    fun continueMenu(activity: Activity, item: ContinueItem, changed: () -> Unit) {
+        val (title, key) = when (val t = item.target) {
+            is Movie -> t.title to t.id
+            is EpisodeRef -> t.show.title to t.show.id
+            else -> return
+        }
+        AlertDialog.Builder(activity)
+            .setTitle(title)
+            .setItems(arrayOf("Remove from Continue Watching", "Mark as watched", "Cancel")) { _, which ->
+                when (which) {
+                    0 -> {
+                        Playback.hideFromContinue(key)
+                        Toast.makeText(activity, "Removed $title from Continue Watching", Toast.LENGTH_SHORT).show()
+                    }
+                    1 -> {
+                        Playback.setWatched(item.id, true)
+                        Toast.makeText(activity, "Marked as watched", Toast.LENGTH_SHORT).show()
+                    }
+                }
+                changed()
+            }
+            .show()
+    }
+
     fun toggleFavorite(activity: Activity, channel: Channel) {
         val wasFavorite = LiveTv.isFavorite(channel)
         val message = when {

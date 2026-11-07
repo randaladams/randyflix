@@ -212,6 +212,20 @@ abstract class TvActivity : FragmentActivity() {
     /** Menu screens hold the screen on so this saver, not the Fire TV's, comes up. */
     protected open val saverHoldsScreenOn: Boolean = true
 
+    /** The key-click setting this screen was built with; it's rebuilt if that changes. */
+    private var clicksApplied = true
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        clicksApplied = KeyClicks.apply(this)
+        super.onCreate(savedInstanceState)
+    }
+
+    /** The screen where the setting was just changed updates itself in place instead. */
+    protected fun clicksChangedHere() {
+        clicksApplied = Settings.keyClicks
+        KeyClicks.applyTo(window.decorView, clicksApplied)
+    }
+
     override fun onPostCreate(savedInstanceState: Bundle?) {
         super.onPostCreate(savedInstanceState)
         if (!isFinishing) screenSaver = ScreenSaver(this, saverHoldsScreenOn) { saverAllowed() }
@@ -219,6 +233,10 @@ abstract class TvActivity : FragmentActivity() {
 
     override fun onResume() {
         super.onResume()
+        if (clicksApplied != Settings.keyClicks) {
+            recreate()   // key clicks changed in Settings while this screen was underneath
+            return
+        }
         if (::screenSaver.isInitialized) screenSaver.onResume()
     }
 
@@ -226,6 +244,8 @@ abstract class TvActivity : FragmentActivity() {
         super.onPause()
         if (::screenSaver.isInitialized) screenSaver.onPause()
     }
+
+    protected fun screenSaverShowing(): Boolean = ::screenSaver.isInitialized && screenSaver.isShowing
 
     protected fun saverKey(event: KeyEvent): Boolean = ::screenSaver.isInitialized && screenSaver.onKey(event)
 

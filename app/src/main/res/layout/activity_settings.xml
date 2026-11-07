@@ -12,25 +12,23 @@
         android:layout_weight="1"
         android:orientation="horizontal"
         android:paddingLeft="48dp"
-        android:paddingTop="92dp"
+        android:paddingTop="84dp"
         android:paddingRight="48dp"
         android:paddingBottom="24dp">
 
-        <!-- Left: sections -->
-        <LinearLayout
-            android:id="@+id/nav"
+        <!-- Left: sections (the top bar's Settings tab says where you are). Scrolls if the
+             list ever outgrows the screen, instead of squashing the last entries. -->
+        <ScrollView
             android:layout_width="240dp"
             android:layout_height="match_parent"
-            android:orientation="vertical">
+            android:fillViewport="false"
+            android:scrollbars="none">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                android:text="Settings"
-                android:textColor="@color/text_primary"
-                android:textSize="28sp"
-                android:textStyle="bold" />
+        <LinearLayout
+            android:id="@+id/nav"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
 
             <Button android:id="@+id/nav_about" style="@style/NavButton" android:text="About" />
             <Button android:id="@+id/nav_clock" style="@style/NavButton" android:text="Clock" />
@@ -39,7 +37,9 @@
             <Button android:id="@+id/nav_live" style="@style/NavButton" android:text="Live TV" />
             <Button android:id="@+id/nav_playback" style="@style/NavButton" android:text="Playback" />
             <Button android:id="@+id/nav_saver" style="@style/NavButton" android:text="Screen saver" />
+            <Button android:id="@+id/nav_sound" style="@style/NavButton" android:text="Sound" />
         </LinearLayout>
+        </ScrollView>
 
         <View
             android:layout_width="1dp"
@@ -122,6 +122,12 @@
                     <Button android:id="@+id/saver_10" style="@style/StackButton" android:text="10 minutes" />
                     <Button android:id="@+id/saver_30" style="@style/StackButton" android:text="30 minutes" />
                     <Button android:id="@+id/saver_never" style="@style/StackButton" android:text="Never" />
+                </LinearLayout>
+
+                <LinearLayout android:id="@+id/sec_sound" style="@style/SettingsSection">
+                    <TextView style="@style/SectionTitle" android:text="Sound" />
+                    <TextView style="@style/SectionHint" android:text="The click the Fire TV makes as you move around the menus and press Select." />
+                    <Button android:id="@+id/key_clicks" style="@style/StackButton" android:text="Key clicks: On" />
                 </LinearLayout>
             </FrameLayout>
         </ScrollView>

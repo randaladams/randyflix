@@ -99,6 +99,29 @@ class MainActivity : TvActivity() {
         dialog.show()
     }
 
+    /** Whether the Back press now ending started on this screen (not on the one just closed). */
+    private var backDown = false
+
+    /**
+     * Back always asks "Exit RandyFlix?" on the first press, wherever the highlight is: it's
+     * caught here before the rows or the top bar can use it to move the highlight instead.
+     */
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (event.keyCode == KeyEvent.KEYCODE_BACK && !screenSaverShowing()) {
+            saverPoke()
+            if (event.action == KeyEvent.ACTION_DOWN) {
+                if (event.repeatCount == 0) backDown = true
+                return true
+            }
+            if (event.action == KeyEvent.ACTION_UP) {
+                if (backDown && !event.isCanceled) confirmExit()
+                backDown = false
+                return true
+            }
+        }
+        return super.dispatchKeyEvent(event)
+    }
+
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
         if (keyCode == KeyEvent.KEYCODE_MENU) {
             val home = supportFragmentManager.findFragmentById(R.id.container) as? MainFragment

@@ -56,6 +56,16 @@ object Playback {
         e.apply()
     }
 
+    /**
+     * Takes a movie or show off Continue Watching (its resume point is kept). It comes back by
+     * itself once it's played again. [key] is the movie's id, or the show's id.
+     */
+    fun hideFromContinue(key: String) {
+        prefs.edit().putLong("h:$key", System.currentTimeMillis()).apply()
+    }
+
+    fun hiddenAt(key: String): Long = prefs.getLong("h:$key", 0L)
+
     fun lastActivity(id: String): Long = maxOf(resume(id)?.time ?: 0L, watchedAt(id))
 
     /** A saved spot to jump back to. [part] is the disc, for multi-disc movies. */

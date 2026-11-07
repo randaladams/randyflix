@@ -60,6 +60,7 @@ class LiveActivity : FragmentActivity() {
         .setReadTimeoutMs(20_000)
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        KeyClicks.apply(this)
         super.onCreate(savedInstanceState)
         listKind = savedInstanceState?.getString(STATE_LIST) ?: intent.getStringExtra(EXTRA_LIST) ?: LiveTv.LIST_ALL
         channels = LiveTv.list(listKind)

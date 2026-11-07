@@ -122,3 +122,19 @@ class ClockView(context: Context, private val withDate: Boolean = true) : TextVi
         super.onDetachedFromWindow()
     }
 }
+
+/** Key clicks (Settings → Sound): views made after this inherit the theme's sound setting. */
+object KeyClicks {
+    /** Call before super.onCreate. Returns the setting it applied. */
+    fun apply(activity: android.app.Activity): Boolean {
+        val on = Settings.keyClicks
+        if (!on) activity.theme.applyStyle(R.style.QuietOverlay, true)
+        return on
+    }
+
+    /** Switches every view already on screen, for the screen where the setting was changed. */
+    fun applyTo(view: View, on: Boolean) {
+        view.isSoundEffectsEnabled = on
+        if (view is ViewGroup) for (i in 0 until view.childCount) applyTo(view.getChildAt(i), on)
+    }
+}

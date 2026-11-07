@@ -123,6 +123,7 @@ object Library {
         val out = ArrayList<Pair<Long, ContinueItem>>()
         for (m in data.movies) {
             val r = Playback.resume(m.id) ?: continue
+            if (Playback.hiddenAt(m.id) >= r.time) continue
             out += r.time to ContinueItem(m, m.id, r)
         }
         for (s in data.shows) {
@@ -133,7 +134,7 @@ object Library {
                 val t = Playback.lastActivity(e.id)
                 if (t > bestTime) { bestTime = t; bestIdx = i }
             }
-            if (bestIdx < 0) continue
+            if (bestIdx < 0 || Playback.hiddenAt(s.id) >= bestTime) continue
             val last = eps[bestIdx]
             val target = if (Playback.resume(last.id) != null) last
             else eps.drop(bestIdx + 1).firstOrNull { it.season != 0 && !Playback.isWatched(it.id) } ?: continue
