@@ -15,6 +15,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.randyflix.R
 import com.randyflix.data.ActionItem
 import com.randyflix.data.Library
+import com.randyflix.data.LiveTv
 import kotlinx.coroutines.launch
 
 /** Home screen: Continue Watching, Browse, Recently Added rows. */
@@ -35,7 +36,8 @@ class MainFragment : BrowseSupportFragment() {
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                Library.version.collect { buildRows() }
+                launch { Library.version.collect { buildRows() } }
+                launch { LiveTv.version.collect { buildRows() } }
             }
         }
     }
@@ -60,6 +62,9 @@ class MainFragment : BrowseSupportFragment() {
             ActionItem(Nav.ACTION_SETTINGS, "Settings", null, R.drawable.ic_settings),
         )
         rows += Triple("browse", "Browse", actions)
+
+        val channels = LiveTv.channels
+        if (channels.isNotEmpty()) rows += Triple("live", "Live TV", channels)
 
         if (data.movies.isNotEmpty()) rows += Triple("recent_movies", "Recently Added Movies", Library.recentMovies())
         if (data.shows.isNotEmpty()) rows += Triple("recent_shows", "Recently Updated Shows", Library.recentShows())

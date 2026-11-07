@@ -7,6 +7,7 @@ import androidx.leanback.widget.ImageCardView
 import androidx.leanback.widget.Presenter
 import com.randyflix.R
 import com.randyflix.data.ActionItem
+import com.randyflix.data.Channel
 import com.randyflix.data.ContinueItem
 import com.randyflix.data.EpisodeRef
 import com.randyflix.data.Library
@@ -66,6 +67,13 @@ class CardPresenter : Presenter() {
                         ImageLoader.load(card.mainImageView, t.episode.thumb ?: t.show.fanart ?: t.show.poster, wideW)
                     }
                 }
+            }
+            is Channel -> {
+                card.titleText = item.name
+                card.contentText = item.groups.joinToString(", ").ifEmpty { "Live" }
+                card.setMainImageDimensions(wideW, wideH)
+                card.setMainImageScaleType(ImageView.ScaleType.FIT_CENTER)
+                ImageLoader.load(card.mainImageView, item.logo, wideW, placeholder = R.drawable.ic_tv)
             }
             is ActionItem -> {
                 card.titleText = item.title

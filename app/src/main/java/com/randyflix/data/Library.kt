@@ -72,6 +72,7 @@ object Library {
     fun scan(full: Boolean = false) {
         if (isScanning) return
         val fullScan = full || outdated
+        LiveTv.refresh()
         job = scope.launch {
             _state.value = ScanState.Running("Connecting to ${Settings.host}…")
             try {

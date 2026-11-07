@@ -55,6 +55,15 @@ https://github.com/randaladams/randyflix/releases/download/latest/randyflix.apk
 
 Updates install over the old version with no uninstall needed, so resume points and watched marks are kept. Every build is signed with the same key, `app/randyflix.keystore`. That key exists only so personal sideloaded builds can update in place.
 
+## Live TV
+
+Put an `.m3u` playlist on a share (default: `movies/_live/channels.m3u`, i.e. `\adamsnas\MOVIES\_live\channels.m3u`) and its channels appear in a **Live TV** row on the home screen. The path is set in Settings; blank turns Live TV off. The playlist is re-read on every app start and library refresh, so edit it on the PC and restart the app.
+
+- Each channel is the usual two lines: `#EXTINF:-1 tvg-logo="…" group-title="…",Name` then the stream URL.
+- Streams can be `http(s)` (HLS `.m3u8` or MPEG-TS) or a file path relative to the playlist's folder.
+- `#EXTVLCOPT:http-user-agent=…` / `http-referrer=…` (or the same `http-*` attributes on `#EXTINF`) are sent with that channel's requests.
+- No program guide yet.
+
 ## Remote controls
 
 | Where | Button | Action |
@@ -62,6 +71,7 @@ Updates install over the old version with no uninstall needed, so resume points 
 | Player | Left / Right (controls hidden) | Back 10 s / forward 30 s |
 | Player | Select | Show controls (subtitles and audio track buttons are there) |
 | Player | Play/Pause, Rewind, Fast-forward | As labeled |
+| Live TV | Up / Down (controls hidden) | Previous / next channel |
 | Episode list | Hold Select | Mark watched / unwatched, or a whole season |
 
 ## Building locally (optional)

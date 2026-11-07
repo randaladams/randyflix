@@ -78,16 +78,19 @@ com/randyflix/
   App.kt, Settings.kt            app start-up; connection settings (SharedPreferences)
   smb/Smb.kt                     shared SMB connection: list/open/read, reconnect-and-retry
   smb/SmbDataSource.kt           ExoPlayer DataSource for smb:// URIs
+  smb/StreamDataSource.kt        routes smb:// to the share and http(s) to the web (live TV)
   data/Models.kt                 Movie / Show / Episode / Subtitle + JSON
   data/Nfo.kt                    tolerant .nfo XML parser
   data/Scanner.kt                library scan (incremental), name/episode parsing
   data/Library.kt                in-memory index, scan job, queries (continue watching, next up, search)
   data/Playback.kt               resume positions and watched marks
+  data/Live.kt                   Channel, M3U parser, LiveTv (playlist from the share, cached in filesDir/live.m3u)
   ui/IntroActivity.kt            startup clip
   ui/MainActivity + MainFragment home rows
   ui/GridFragment (+GridActivity) poster grids: movies, shows, collections, search results
   ui/MovieActivity, ShowActivity  details pages
   ui/PlayerActivity              playback, queueing, resume, error dialog
+  ui/LiveActivity                live TV: Up/Down channel change, channel banner
   ui/SettingsActivity            settings + connection test
   ui/CardPresenter, ImageLoader, Nav, Format   shared UI helpers
 ```
@@ -97,7 +100,8 @@ com/randyflix/
 1. **First real test.** Install via Downloader, enter the Pi's IP and the share names, then choose Save and test. If the test fails, run `testparm -s` on the Pi to confirm the real share names and whether guest access is allowed.
 2. Time the first full scan on the real library, and make sure posters, plots and episodes all look right.
 3. Check playback of the different formats in the library. Expected trouble: **DTS or TrueHD audio** and old **DivX/Xvid AVI** files. If that's an issue, options are the Media3 FFmpeg audio extension (needs a native build step in CI) or an "Open in VLC" fallback.
-4. Possible later features (none started): genre rows or filters, sort options, the Pi-side indexer (only if needed), and auto-play of a "next episode" countdown.
+4. Possible later features (none started): genre rows or filters, sort options, the Pi-side indexer (only if needed), a "next episode" countdown, and a Live TV program guide (Now/Next from XMLTV).
+5. **Live TV** (added 2026-11-06): playlist at `\adamsnas\MOVIES\_live\channels.m3u` with 5 Brazilian novela channels picked from https://iptv-org.github.io/iptv/countries/br.m3u. Globo, Record and Band returned 403 from this network (likely Brazil-only). Not yet tested on the Firestick.
 
 ## 8. Moving to a new machine
 

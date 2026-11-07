@@ -32,6 +32,11 @@ object Settings {
         get() = prefs.getBoolean("intro", true)
         set(v) = prefs.edit().putBoolean("intro", v).apply()
 
+    /** Live TV playlist (.m3u) on the share; blank turns Live TV off. */
+    var livePath: String
+        get() = str("live", "movies/_live/channels.m3u")
+        set(v) = put("live", v.trim('/', '\\', ' '))
+
     /** Start the next episode automatically when one ends. */
     var autoPlayNext: Boolean
         get() = prefs.getBoolean("autoplay", true)

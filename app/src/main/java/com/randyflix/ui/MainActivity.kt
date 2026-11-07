@@ -11,6 +11,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.randyflix.R
 import com.randyflix.Settings
 import com.randyflix.data.Library
+import com.randyflix.data.LiveTv
 import com.randyflix.data.ScanState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
@@ -28,6 +29,7 @@ class MainActivity : FragmentActivity() {
         if (!Settings.isConfigured) {
             startActivity(Intent(this, SettingsActivity::class.java))
         } else {
+            LiveTv.refresh()
             Library.scanIfStale()
         }
 

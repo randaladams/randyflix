@@ -5,6 +5,7 @@ import android.app.AlertDialog
 import android.content.Intent
 import android.widget.Toast
 import com.randyflix.data.ActionItem
+import com.randyflix.data.Channel
 import com.randyflix.data.ContinueItem
 import com.randyflix.data.EpisodeRef
 import com.randyflix.data.Library
@@ -19,6 +20,7 @@ object Nav {
             is Movie -> activity.startActivity(Intent(activity, MovieActivity::class.java).putExtra(EXTRA_ID, item.id))
             is Show -> activity.startActivity(Intent(activity, ShowActivity::class.java).putExtra(EXTRA_ID, item.id))
             is EpisodeRef -> playWithPrompt(activity, item.episode.id, item.episode.title)
+            is Channel -> activity.startActivity(Intent(activity, LiveActivity::class.java).putExtra(EXTRA_ID, item.url))
             is ContinueItem -> play(activity, item.id, item.resume?.position ?: 0L, item.resume?.part ?: 0)
             is ActionItem -> when (item.id) {
                 ACTION_MOVIES -> activity.startActivity(GridActivity.intent(activity, GridFragment.MODE_MOVIES, "Movies"))

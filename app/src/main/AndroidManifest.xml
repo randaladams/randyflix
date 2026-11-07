@@ -46,5 +46,10 @@
             android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenLayout|screenSize|smallestScreenSize"
             android:exported="false"
             android:theme="@style/Theme.RandyFlix.Player" />
+        <activity
+            android:name=".ui.LiveActivity"
+            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenLayout|screenSize|smallestScreenSize"
+            android:exported="false"
+            android:theme="@style/Theme.RandyFlix.Player" />
     </application>
 </manifest>

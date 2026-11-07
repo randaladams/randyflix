@@ -11,6 +11,8 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.randyflix.R
 import com.randyflix.Settings
 import com.randyflix.data.Library
+import com.randyflix.data.LiveTv
+import com.randyflix.data.M3u
 import com.randyflix.data.ScanState
 import com.randyflix.data.Scanner
 import com.randyflix.smb.Smb
@@ -29,22 +31,26 @@ class SettingsActivity : FragmentActivity() {
         val host = findViewById<EditText>(R.id.host)
         val movies = findViewById<EditText>(R.id.movies)
         val tv = findViewById<EditText>(R.id.tv)
+        val live = findViewById<EditText>(R.id.live)
 
         host.setText(Settings.host)
         movies.setText(Settings.moviesPath)
         tv.setText(Settings.tvPath)
+        live.setText(Settings.livePath)
 
         @Suppress("DEPRECATION")
         val version = packageManager.getPackageInfo(packageName, 0).versionName
         findViewById<TextView>(R.id.version).text = "RandyFlix $version"
 
         findViewById<Button>(R.id.save).setOnClickListener {
+            // The Live TV playlist isn't part of the library index, so changing it needs no full rescan.
             val pathsChanged = host.text.toString().trim() != Settings.host ||
                 movies.text.toString().trim('/', '\\', ' ') != Settings.moviesPath ||
                 tv.text.toString().trim('/', '\\', ' ') != Settings.tvPath
             Settings.host = host.text.toString()
             Settings.moviesPath = movies.text.toString()
             Settings.tvPath = tv.text.toString()
+            Settings.livePath = live.text.toString()
             testConnection(scanAfter = true, full = pathsChanged)
         }
         findViewById<Button>(R.id.refresh).setOnClickListener { Library.scan(false) }
@@ -103,12 +109,22 @@ class SettingsActivity : FragmentActivity() {
                             "✗ $label ($path): ${Scanner.describe(e)}"
                         }
                     }
+                    // A missing playlist only turns Live TV off, so it doesn't stop the library scan.
+                    Settings.livePath.takeIf { it.isNotBlank() }?.let { path ->
+                        lines += try {
+                            val text = Smb.readBytes(path).toString(Charsets.UTF_8)
+                            "✓ Live TV ($path): ${M3u.parse(text, "").size} channels"
+                        } catch (e: Exception) {
+                            "⚠ Live TV ($path): ${Scanner.describe(e)}"
+                        }
+                    }
                     lines.joinToString("\n")
                 } catch (e: Exception) {
                     "✗ Could not connect: ${Scanner.describe(e)}"
                 }
             }
             status.text = result
+            LiveTv.refresh()
             if (scanAfter && !result.contains("✗")) Library.scan(full)
         }
     }

@@ -41,6 +41,9 @@
 
             <TextView style="@style/FieldLabel" android:text="TV shows folder" />
             <EditText android:id="@+id/tv" style="@style/Field" android:hint="tv" />
+
+            <TextView style="@style/FieldLabel" android:text="Live TV playlist (.m3u on the share; blank = off)" />
+            <EditText android:id="@+id/live" style="@style/Field" android:hint="movies/_live/channels.m3u" />
         </LinearLayout>
 
         <LinearLayout

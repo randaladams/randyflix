@@ -81,6 +81,7 @@ dependencies {
 
     implementation("androidx.media3:media3-exoplayer:1.4.1")
     implementation("androidx.media3:media3-ui:1.4.1")
+    implementation("androidx.media3:media3-exoplayer-hls:1.4.1")   // live TV streams (.m3u8)
 
     // SMB2/3 client for talking to the Pi's Samba shares
     implementation("com.hierynomus:smbj:0.13.0")
