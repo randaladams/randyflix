@@ -108,6 +108,11 @@ class TopBar(
         addView(clock, LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
     }
 
+    /** Down from any tab goes straight to [view] (e.g. the search field), not the nearest thing below. */
+    fun downTo(view: View) {
+        tabs.values.forEach { it.nextFocusDownId = view.id }
+    }
+
     /** Moves the highlight to this screen's tab. */
     fun focusCurrent() {
         tabs[current]?.requestFocus()

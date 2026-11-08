@@ -11,7 +11,7 @@
         android:layout_marginTop="92dp"
         android:layout_marginRight="48dp"
         android:hint="Search movies and shows"
-        android:imeOptions="actionSearch" />
+        android:imeOptions="actionSearch|flagNoExtractUi|flagNoFullscreen" />
 
     <FrameLayout
         android:id="@+id/container"
