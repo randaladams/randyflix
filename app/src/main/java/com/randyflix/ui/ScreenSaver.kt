@@ -259,6 +259,28 @@ abstract class TvActivity : FragmentActivity() {
         if (::screenSaver.isInitialized) screenSaver.settingsChanged()
     }
 
-    override fun dispatchKeyEvent(event: KeyEvent): Boolean =
-        saverKey(event) || KeyClicks.dispatch(this, event) { super.dispatchKeyEvent(it) }
+    private var backBar: TopBar? = null
+    private var backDown = false
+
+    /** Back first moves up to [bar]; Back on the bar then leaves the screen as usual. */
+    fun backToTopBar(bar: TopBar) {
+        backBar = bar
+    }
+
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (saverKey(event)) return true
+        val bar = backBar
+        if (bar != null && event.keyCode == KeyEvent.KEYCODE_BACK && !bar.hasFocus()) {
+            if (event.action == KeyEvent.ACTION_DOWN) {
+                if (event.repeatCount == 0) backDown = true
+                return true
+            }
+            if (event.action == KeyEvent.ACTION_UP) {
+                if (backDown && !event.isCanceled) bar.focusCurrent()
+                backDown = false
+                return true
+            }
+        }
+        return KeyClicks.dispatch(this, event) { super.dispatchKeyEvent(it) }
+    }
 }

@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Typeface
 import android.view.Gravity
+import android.view.KeyEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
@@ -35,6 +36,11 @@ class TopBar(
 ) : LinearLayout(activity) {
     val clock = ClockView(activity, withDate = false)
     private val tabs = LinkedHashMap<Tab, TextView>()
+    private var pressed: Tab? = null
+
+    private fun isConfirm(keyCode: Int) = keyCode == KeyEvent.KEYCODE_DPAD_CENTER ||
+        keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER ||
+        keyCode == KeyEvent.KEYCODE_BUTTON_A
 
     init {
         orientation = HORIZONTAL
@@ -54,10 +60,21 @@ class TopBar(
                 val v = Format.dp(activity, 6)
                 setPadding(h, v, h, v)
                 isFocusable = true
-                isClickable = true
                 isActivated = tab == current
                 if (tab == current) setTypeface(typeface, Typeface.BOLD)
-                setOnClickListener { go(tab) }
+                // Opens only on a whole Select press (down and up) on this tab: moving onto a
+                // tab, or a press that started somewhere else, never opens it.
+                setOnKeyListener { _, keyCode, event ->
+                    if (!isConfirm(keyCode)) return@setOnKeyListener false
+                    when (event.action) {
+                        KeyEvent.ACTION_DOWN -> if (event.repeatCount == 0) pressed = tab
+                        KeyEvent.ACTION_UP -> {
+                            if (pressed == tab && !event.isCanceled) go(tab)
+                            pressed = null
+                        }
+                    }
+                    true
+                }
             }
             tabs[tab] = view
             addView(view, LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
@@ -112,6 +129,9 @@ class TopBar(
         fun add(activity: FragmentActivity, current: Tab, isTabRoot: Boolean): TopBar {
             val root = activity.findViewById<ViewGroup>(android.R.id.content)
             val bar = TopBar(activity, current, isTabRoot)
+            // On a tab's own screen (Movies, TV Shows, Live TV, Search, Settings), Back goes up to
+            // the bar first. Home has its own version (Back there asks to exit).
+            if (isTabRoot && activity is TvActivity && activity !is MainActivity) activity.backToTopBar(bar)
             root.addView(bar, FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, Format.dp(activity, HEIGHT_DP), Gravity.TOP,
             ))
