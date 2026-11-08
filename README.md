@@ -120,3 +120,12 @@ gradle assembleRelease
 ```
 
 The APK lands in `app/build/outputs/apk/release/`.
+
+## Weekly channel guide check on the Pi
+
+`pi/check_catalog.py` (copied to `_randyflix/tools/` on the share) re-tests every channel in
+`catalog.m3u` and removes any that fail two weekly checks in a row; if most fail at once it
+assumes the internet was down and changes nothing. It writes `_randyflix/catalog-report.txt`
+and keeps `catalog.bak.m3u` when it removes channels. Set it up once on the Pi with
+`sh <share path>/_randyflix/tools/install.sh` (Sundays 4:30 AM via cron; `--remove` undoes it).
+
