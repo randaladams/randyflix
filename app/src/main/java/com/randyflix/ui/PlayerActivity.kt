@@ -118,6 +118,7 @@ class PlayerActivity : TvActivity() {
             .build()
         player = p
         playerView.player = p
+        PictureSize.attach(playerView, p)
         currentId = id
         TrackChoice.startOff(p)   // captions start off; turning them on lasts until the player closes
 
@@ -278,6 +279,7 @@ class PlayerActivity : TvActivity() {
             items += PlayerMenu.Item("Bookmarks (${marks.size})…", PlayerMenu.After.STAY) { menu.push { bookmarksPage(id, multiDisc) } }
         }
         items += TrackChoice.menuItems(p, menu, ::toast)
+        items += PictureSize.menuItems(playerView, p, menu)
         return (p.mediaMetadata.title?.toString() ?: "Menu") to items
     }
 

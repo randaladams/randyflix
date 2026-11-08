@@ -65,6 +65,11 @@ object Settings {
         get() = prefs.getBoolean("keyclicks", true)
         set(v) = prefs.edit().putBoolean("keyclicks", v).apply()
 
+    /** ☰ → Picture: NORMAL, STRETCH, WIDE_ZOOM or ZOOM. */
+    var pictureSize: String
+        get() = str("picture", "NORMAL")
+        set(v) = put("picture", v)
+
     var autoPlayNext: Boolean
         get() = prefs.getBoolean("autoplay", true)
         set(v) = prefs.edit().putBoolean("autoplay", v).apply()

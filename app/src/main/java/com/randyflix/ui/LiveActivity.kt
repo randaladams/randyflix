@@ -131,6 +131,7 @@ class LiveActivity : FragmentActivity() {
         })
         player = p
         playerView.player = p
+        PictureSize.attach(playerView, p)
         TrackChoice.startOff(p)   // captions start off; turning them on lasts across channel changes
         tune(index)
     }
@@ -181,7 +182,10 @@ class LiveActivity : FragmentActivity() {
             items += PlayerMenu.Item(if (LiveTv.isMine(ch)) "✓  Remove from My channels" else "+  Add to My channels") {
                 toast(if (LiveTv.toggleMine(ch)) "Added to My channels" else "Removed from My channels")
             }
-            if (p != null) items += TrackChoice.menuItems(p, menu, ::toast)
+            if (p != null) {
+                items += TrackChoice.menuItems(p, menu, ::toast)
+                items += PictureSize.menuItems(playerView, p, menu)
+            }
             ch.name to items
         }
     }
