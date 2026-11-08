@@ -11,11 +11,17 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import com.randyflix.Settings
+import java.util.WeakHashMap
+import kotlin.math.abs
 import kotlin.math.sqrt
 
 /**
- * Picture size (☰ → Picture), like a TV's aspect button. The choice is remembered, the way a
- * TV remembers it, and applies to movies, shows and live TV.
+ * Picture size (☰ → Picture), like a TV's aspect button, remembered per movie, per show and
+ * per live channel (so stretching an old 4:3 show doesn't also stretch widescreen movies).
+ *
+ * Older shows on DVD are often stored as 16:9 with the black side bars part of the picture, so
+ * the player sees a 16:9 video. For a video that's already the screen's shape, the modes act the
+ * way a TV's do: they assume a 4:3 picture inside it.
  */
 @OptIn(UnstableApi::class)
 object PictureSize {
@@ -26,17 +32,27 @@ object PictureSize {
         ZOOM("Zoom"),
     }
 
-    val current: Mode get() = Mode.values().firstOrNull { it.name == Settings.pictureSize } ?: Mode.NORMAL
+    /** 4:3 inside a screen-shaped (16:9) video. */
+    private const val INNER = 4f / 3f
+
+    /** Which title each player is showing, for remembering its mode. */
+    private val keys = WeakHashMap<PlayerView, () -> String>()
+    private val layoutWatchers = WeakHashMap<PlayerView, View.OnLayoutChangeListener>()
+
+    private fun modeFor(view: PlayerView): Mode {
+        val key = keys[view]?.invoke() ?: return Mode.NORMAL
+        val name = Settings.pictureSizeFor(key)
+        return Mode.values().firstOrNull { it.name == name } ?: Mode.NORMAL
+    }
 
     /**
-     * Keeps [view] showing [player] in the remembered mode: now, when the video's shape changes
-     * (a new episode or channel) and when the screen is laid out.
+     * Keeps [view] showing [player] in the remembered mode for [key] (the movie, show or channel
+     * playing): now, when the video's shape changes, and when the screen is laid out.
      */
-    fun attach(view: PlayerView, player: Player) {
+    fun attach(view: PlayerView, player: Player, key: () -> String) {
+        keys[view] = key
         player.addListener(object : Player.Listener {
-            override fun onVideoSizeChanged(videoSize: VideoSize) {
-                if (apply(view, player)) refreshSurface(view)
-            }
+            override fun onVideoSizeChanged(videoSize: VideoSize) = update(view, player)
         })
         // The player is rebuilt when the screen comes back, so replace (don't add) the watcher.
         layoutWatchers.remove(view)?.let { view.removeOnLayoutChangeListener(it) }
@@ -45,29 +61,46 @@ object PictureSize {
         }
         layoutWatchers[view] = watcher
         view.addOnLayoutChangeListener(watcher)
-        apply(view, player)   // before the first frame, so no refresh needed
+        apply(view, player)
     }
 
-    private val layoutWatchers = java.util.WeakHashMap<PlayerView, View.OnLayoutChangeListener>()
+    /** Re-applies after the title changed (next episode, another channel). */
+    fun update(view: PlayerView, player: Player) {
+        if (apply(view, player)) refreshSurface(view)
+    }
 
-    /** The ☰ items: one line showing the mode, opening the list of modes. */
+    /** The ☰ item: shows the mode and opens the list, which stays open to try another. */
     fun menuItems(view: PlayerView, player: Player, menu: PlayerMenu): List<PlayerMenu.Item> = listOf(
-        PlayerMenu.Item("Picture: ${current.label}…", PlayerMenu.After.STAY) {
+        PlayerMenu.Item("Picture: ${modeFor(view).label}…", PlayerMenu.After.STAY) {
             menu.push {
-                "Picture" to Mode.values().map { m ->
-                    PlayerMenu.Item((if (m == current) "✓  " else "     ") + m.label, PlayerMenu.After.BACK) {
-                        Settings.pictureSize = m.name
-                        if (apply(view, player)) refreshSurface(view)
+                "Picture  ·  ${shapeOf(player)}" to Mode.values().map { m ->
+                    PlayerMenu.Item((if (m == modeFor(view)) "✓  " else "     ") + m.label) {
+                        keys[view]?.invoke()?.let { Settings.setPictureSizeFor(it, m.name) }
+                        update(view, player)
                     }
                 }
             }
         },
     )
 
+    /** "video 4:3", "video 16:9", "video 2.39:1" — so it's clear what the modes have to work with. */
+    private fun shapeOf(player: Player): String {
+        val s = player.videoSize
+        if (s.width <= 0 || s.height <= 0) return "video size not known yet"
+        val a = s.width * s.pixelWidthHeightRatio / s.height
+        val name = when {
+            abs(a - 4f / 3f) < 0.04f -> "4:3"
+            abs(a - 16f / 9f) < 0.05f -> "16:9"
+            abs(a - 1.85f) < 0.04f -> "1.85:1"
+            else -> "%.2f:1".format(a)
+        }
+        return "video $name"
+    }
+
     /**
      * The Fire TV draws video on a hardware layer that may keep the size it had when the video
-     * started, ignoring later changes to the picture area. Rebuilding the video surface (hidden
-     * for a moment, then shown) makes it take the new size. ExoPlayer reattaches by itself.
+     * started. Rebuilding the video surface (hidden for a moment, then shown) makes it take the
+     * new size. ExoPlayer reattaches by itself.
      */
     private fun refreshSurface(view: PlayerView) {
         val surface = view.videoSurfaceView ?: return
@@ -75,52 +108,71 @@ object PictureSize {
         surface.postDelayed({ surface.visibility = View.VISIBLE }, 50)
     }
 
-    /** Sets up the picture area for the current mode. Returns whether anything changed. */
+    /**
+     * Sizes the picture area for the mode: it may be bigger than the screen (the player clips
+     * it), which is how Zoom and Wide zoom crop. Returns whether anything changed.
+     */
     fun apply(view: PlayerView, player: Player): Boolean {
         val frame = view.findViewById<View>(androidx.media3.ui.R.id.exo_content_frame) ?: return false
-        val oldMode = view.resizeMode
-        var width = ViewGroup.LayoutParams.MATCH_PARENT
-        var height = ViewGroup.LayoutParams.MATCH_PARENT
-        when (current) {
-            // Whole picture, black bars where the shapes differ.
-            Mode.NORMAL -> view.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
-            // Fills the screen by stretching (a 4:3 picture gets wider).
-            Mode.STRETCH -> view.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FILL
-            // Enlarged evenly until the bars are gone; the overflow is cut off.
-            Mode.ZOOM -> view.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM
-            // Half of each: the picture is stretched part of the way and enlarged the rest, so it
-            // fills the screen with half the distortion of Stretch and a smaller crop than Zoom.
-            Mode.WIDE_ZOOM -> {
-                val size = player.videoSize
-                val w = view.width
-                val h = view.height
-                if (size.width <= 0 || size.height <= 0 || w <= 0 || h <= 0) {
-                    view.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
-                } else {
-                    view.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FILL
-                    val video = size.width * size.pixelWidthHeightRatio / size.height
-                    val screen = w.toFloat() / h
-                    if (video < screen) {
-                        // Narrower than the screen (e.g. 4:3): full width, top and bottom trimmed.
-                        width = w
-                        height = (h * sqrt(screen / video)).toInt()
-                    } else {
-                        // Wider than the screen (e.g. 2.39:1): full height, sides trimmed.
-                        height = h
-                        width = (w * sqrt(video / screen)).toInt()
+        val lp = frame.layoutParams as? FrameLayout.LayoutParams ?: return false
+        val size = player.videoSize
+        val sw = view.width
+        val sh = view.height
+        val mode = modeFor(view)
+        var w = ViewGroup.LayoutParams.MATCH_PARENT
+        var h = ViewGroup.LayoutParams.MATCH_PARENT
+        var resize = AspectRatioFrameLayout.RESIZE_MODE_FIT
+
+        if (mode != Mode.NORMAL && size.width > 0 && size.height > 0 && sw > 0 && sh > 0) {
+            resize = AspectRatioFrameLayout.RESIZE_MODE_FILL
+            val video = size.width * size.pixelWidthHeightRatio / size.height
+            val screen = sw.toFloat() / sh
+            when {
+                // Already the screen's shape: assume a 4:3 picture with bars built in.
+                abs(video / screen - 1f) < 0.03f -> {
+                    val f = screen / INNER   // 1.33 on a 16:9 screen
+                    when (mode) {
+                        Mode.STRETCH -> { w = (sw * f).toInt(); h = sh }
+                        Mode.ZOOM -> { w = (sw * f).toInt(); h = (sh * f).toInt() }
+                        Mode.WIDE_ZOOM -> { w = (sw * f).toInt(); h = (sh * sqrt(f)).toInt() }
+                        Mode.NORMAL -> {}
+                    }
+                }
+                // Narrower than the screen (4:3): fill the width.
+                video < screen -> {
+                    val f = screen / video
+                    when (mode) {
+                        Mode.STRETCH -> { w = sw; h = sh }
+                        Mode.ZOOM -> { w = sw; h = (sh * f).toInt() }
+                        Mode.WIDE_ZOOM -> { w = sw; h = (sh * sqrt(f)).toInt() }
+                        Mode.NORMAL -> {}
+                    }
+                }
+                // Wider than the screen (2.39:1): fill the height.
+                else -> {
+                    val f = video / screen
+                    when (mode) {
+                        Mode.STRETCH -> { w = sw; h = sh }
+                        Mode.ZOOM -> { w = (sw * f).toInt(); h = sh }
+                        Mode.WIDE_ZOOM -> { w = (sw * sqrt(f)).toInt(); h = sh }
+                        Mode.NORMAL -> {}
                     }
                 }
             }
         }
-        // The picture area may be bigger than the screen (Wide zoom); the player clips it.
-        val lp = frame.layoutParams as? FrameLayout.LayoutParams ?: return view.resizeMode != oldMode
-        if (lp.width != width || lp.height != height || lp.gravity != Gravity.CENTER) {
-            lp.width = width
-            lp.height = height
+
+        var changed = false
+        if (view.resizeMode != resize) {
+            view.resizeMode = resize
+            changed = true
+        }
+        if (lp.width != w || lp.height != h || lp.gravity != Gravity.CENTER) {
+            lp.width = w
+            lp.height = h
             lp.gravity = Gravity.CENTER
             frame.layoutParams = lp
-            return true
+            changed = true
         }
-        return view.resizeMode != oldMode
+        return changed
     }
 }

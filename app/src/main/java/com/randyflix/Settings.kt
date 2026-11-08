@@ -65,10 +65,12 @@ object Settings {
         get() = prefs.getBoolean("keyclicks", true)
         set(v) = prefs.edit().putBoolean("keyclicks", v).apply()
 
-    /** ☰ → Picture: NORMAL, STRETCH, WIDE_ZOOM or ZOOM. */
-    var pictureSize: String
-        get() = str("picture", "NORMAL")
-        set(v) = put("picture", v)
+    /** ☰ → Picture for one movie, show or channel ([key]): NORMAL, STRETCH, WIDE_ZOOM or ZOOM. */
+    fun pictureSizeFor(key: String): String = str("picture:$key", "NORMAL")
+
+    fun setPictureSizeFor(key: String, mode: String) {
+        if (mode == "NORMAL") prefs.edit().remove("picture:$key").apply() else put("picture:$key", mode)
+    }
 
     var autoPlayNext: Boolean
         get() = prefs.getBoolean("autoplay", true)

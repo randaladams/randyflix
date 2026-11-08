@@ -131,7 +131,7 @@ class LiveActivity : FragmentActivity() {
         })
         player = p
         playerView.player = p
-        PictureSize.attach(playerView, p)
+        PictureSize.attach(playerView, p) { "live:" + channel().url }   // remembered per channel
         TrackChoice.startOff(p)   // captions start off; turning them on lasts across channel changes
         tune(index)
     }
@@ -157,6 +157,7 @@ class LiveActivity : FragmentActivity() {
             prepare()
             playWhenReady = true
         }
+        player?.let { PictureSize.update(playerView, it) }   // this channel's remembered picture size
         showBanner(ch, position(ch))
     }
 

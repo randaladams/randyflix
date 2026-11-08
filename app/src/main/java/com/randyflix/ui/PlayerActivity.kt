@@ -118,8 +118,11 @@ class PlayerActivity : TvActivity() {
             .build()
         player = p
         playerView.player = p
-        PictureSize.attach(playerView, p)
         currentId = id
+        // Remembered per movie, or per show for episodes.
+        PictureSize.attach(playerView, p) {
+            movie?.id ?: Library.episode(currentId)?.show?.id ?: currentId ?: ""
+        }
         TrackChoice.startOff(p)   // captions start off; turning them on lasts until the player closes
 
         p.addListener(object : Player.Listener {
@@ -130,6 +133,7 @@ class PlayerActivity : TvActivity() {
                     Playback.setWatched(previous, true)
                 }
                 currentId = mediaItem?.mediaId
+                PictureSize.update(playerView, p)   // the next episode may be another show's
             }
 
             override fun onPlaybackStateChanged(state: Int) {
