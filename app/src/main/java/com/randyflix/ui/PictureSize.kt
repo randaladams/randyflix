@@ -34,7 +34,9 @@ object PictureSize {
      */
     fun attach(view: PlayerView, player: Player) {
         player.addListener(object : Player.Listener {
-            override fun onVideoSizeChanged(videoSize: VideoSize) = apply(view, player)
+            override fun onVideoSizeChanged(videoSize: VideoSize) {
+                if (apply(view, player)) refreshSurface(view)
+            }
         })
         // The player is rebuilt when the screen comes back, so replace (don't add) the watcher.
         layoutWatchers.remove(view)?.let { view.removeOnLayoutChangeListener(it) }
@@ -43,7 +45,7 @@ object PictureSize {
         }
         layoutWatchers[view] = watcher
         view.addOnLayoutChangeListener(watcher)
-        apply(view, player)
+        apply(view, player)   // before the first frame, so no refresh needed
     }
 
     private val layoutWatchers = java.util.WeakHashMap<PlayerView, View.OnLayoutChangeListener>()
@@ -55,15 +57,28 @@ object PictureSize {
                 "Picture" to Mode.values().map { m ->
                     PlayerMenu.Item((if (m == current) "✓  " else "     ") + m.label, PlayerMenu.After.BACK) {
                         Settings.pictureSize = m.name
-                        apply(view, player)
+                        if (apply(view, player)) refreshSurface(view)
                     }
                 }
             }
         },
     )
 
-    fun apply(view: PlayerView, player: Player) {
-        val frame = view.findViewById<View>(androidx.media3.ui.R.id.exo_content_frame) ?: return
+    /**
+     * The Fire TV draws video on a hardware layer that may keep the size it had when the video
+     * started, ignoring later changes to the picture area. Rebuilding the video surface (hidden
+     * for a moment, then shown) makes it take the new size. ExoPlayer reattaches by itself.
+     */
+    private fun refreshSurface(view: PlayerView) {
+        val surface = view.videoSurfaceView ?: return
+        surface.visibility = View.INVISIBLE
+        surface.postDelayed({ surface.visibility = View.VISIBLE }, 50)
+    }
+
+    /** Sets up the picture area for the current mode. Returns whether anything changed. */
+    fun apply(view: PlayerView, player: Player): Boolean {
+        val frame = view.findViewById<View>(androidx.media3.ui.R.id.exo_content_frame) ?: return false
+        val oldMode = view.resizeMode
         var width = ViewGroup.LayoutParams.MATCH_PARENT
         var height = ViewGroup.LayoutParams.MATCH_PARENT
         when (current) {
@@ -98,12 +113,14 @@ object PictureSize {
             }
         }
         // The picture area may be bigger than the screen (Wide zoom); the player clips it.
-        val lp = frame.layoutParams as? FrameLayout.LayoutParams ?: return
+        val lp = frame.layoutParams as? FrameLayout.LayoutParams ?: return view.resizeMode != oldMode
         if (lp.width != width || lp.height != height || lp.gravity != Gravity.CENTER) {
             lp.width = width
             lp.height = height
             lp.gravity = Gravity.CENTER
             frame.layoutParams = lp
+            return true
         }
+        return view.resizeMode != oldMode
     }
 }
