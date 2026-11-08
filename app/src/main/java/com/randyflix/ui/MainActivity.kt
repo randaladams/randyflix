@@ -78,7 +78,9 @@ class MainActivity : TvActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         val tab = intent.getStringExtra(EXTRA_TAB)?.let { name -> Tab.values().firstOrNull { it.name == name } }
-        if (tab != null && tab != Tab.HOME) openTab(this, tab)
+        val focusBar = intent.getBooleanExtra(TopBar.EXTRA_FOCUS_BAR, false)
+        if (tab != null && tab != Tab.HOME) openTab(this, tab, focusBar)
+        else if (tab == Tab.HOME && focusBar) topBar.postDelayed({ topBar.focusCurrent() }, 150)
     }
 
     /** "Exit RandyFlix?" with Yes selected; pressing Back again also exits. */
@@ -145,9 +147,9 @@ class MainActivity : TvActivity() {
     companion object {
         const val EXTRA_TAB = "tab"
 
-        fun openTab(activity: MainActivity, tab: Tab) {
+        fun openTab(activity: MainActivity, tab: Tab, focusBar: Boolean = false) {
             TopBar.intentFor(activity, tab)?.let {
-                activity.startActivity(it)
+                activity.startActivity(it.putExtra(TopBar.EXTRA_FOCUS_BAR, focusBar))
                 activity.overridePendingTransition(0, 0)
             }
         }

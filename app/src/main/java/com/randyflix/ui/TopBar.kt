@@ -38,6 +38,12 @@ class TopBar(
     private val tabs = LinkedHashMap<Tab, TextView>()
     private var pressed: Tab? = null
 
+    /** Opens whichever tab is highlighted, if it's not this screen's. */
+    private val openFocused = Runnable {
+        val tab = tabs.entries.firstOrNull { it.value.isFocused }?.key
+        if (tab != null && tab != current) go(tab, focusBar = true)
+    }
+
     private fun isConfirm(keyCode: Int) = keyCode == KeyEvent.KEYCODE_DPAD_CENTER ||
         keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER ||
         keyCode == KeyEvent.KEYCODE_BUTTON_A
@@ -62,8 +68,14 @@ class TopBar(
                 isFocusable = true
                 isActivated = tab == current
                 if (tab == current) setTypeface(typeface, Typeface.BOLD)
-                // Opens only on a whole Select press (down and up) on this tab: moving onto a
-                // tab, or a press that started somewhere else, never opens it.
+                // Moving onto another tab opens it after a short pause (so holding Right can skip
+                // past tabs). The current tab is where you land coming up from the screen, so
+                // landing there never opens anything.
+                setOnFocusChangeListener { _, has ->
+                    removeCallbacks(openFocused)
+                    if (has && tab != current) postDelayed(openFocused, OPEN_DELAY_MS)
+                }
+                // Select opens a tab straight away (only a whole press, down and up, on this tab).
                 setOnKeyListener { _, keyCode, event ->
                     if (!isConfirm(keyCode)) return@setOnKeyListener false
                     when (event.action) {
@@ -107,16 +119,23 @@ class TopBar(
         else tabs[current]?.takeIf { it.isShown }?.let { views += it }
     }
 
-    private fun go(tab: Tab) {
+    override fun onDetachedFromWindow() {
+        removeCallbacks(openFocused)
+        super.onDetachedFromWindow()
+    }
+
+    /** [focusBar]: the new screen starts with the highlight on its tab, so you can keep moving along the bar. */
+    private fun go(tab: Tab, focusBar: Boolean = false) {
         if (tab == current && isTabRoot) return
         if (activity is MainActivity) {
-            MainActivity.openTab(activity, tab)
+            MainActivity.openTab(activity, tab, focusBar)
         } else {
             // Every tab sits directly on top of Home, so Back from any of them goes Home.
             activity.startActivity(
                 Intent(activity, MainActivity::class.java)
                     .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
                     .putExtra(MainActivity.EXTRA_TAB, tab.name)
+                    .putExtra(EXTRA_FOCUS_BAR, focusBar)
             )
             activity.overridePendingTransition(0, 0)
         }
@@ -125,6 +144,8 @@ class TopBar(
     companion object {
         /** Height of the bar; screens keep their content below this. */
         const val HEIGHT_DP = 72
+        const val EXTRA_FOCUS_BAR = "focus_bar"
+        private const val OPEN_DELAY_MS = 450L
 
         fun add(activity: FragmentActivity, current: Tab, isTabRoot: Boolean): TopBar {
             val root = activity.findViewById<ViewGroup>(android.R.id.content)
@@ -135,6 +156,12 @@ class TopBar(
             root.addView(bar, FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, Format.dp(activity, HEIGHT_DP), Gravity.TOP,
             ))
+            // Opened by moving along the bar: keep the highlight on the bar. A short wait lets
+            // the screen finish putting its own first highlight in place.
+            if (activity.intent.getBooleanExtra(EXTRA_FOCUS_BAR, false)) {
+                activity.intent.removeExtra(EXTRA_FOCUS_BAR)
+                bar.postDelayed({ bar.focusCurrent() }, 150)
+            }
             return bar
         }
 
