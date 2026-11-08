@@ -114,6 +114,9 @@ def main():
 
     with ThreadPoolExecutor(max_workers=8) as pool:
         results = list(pool.map(test_stream, entries))
+    # Busy servers sometimes time out when the Pi asks several at once: anything that failed
+    # gets one more try on its own before it counts.
+    results = [test_stream(e) if why else None for e, why in zip(entries, results)]
 
     try:
         with open(state_path, encoding="utf-8") as f:
