@@ -75,6 +75,8 @@ class TopBar(
                     removeCallbacks(openFocused)
                     if (has && tab != current) postDelayed(openFocused, OPEN_DELAY_MS)
                 }
+                // A tap opens it (phones and tablets).
+                setOnClickListener { go(tab) }
                 // Select opens a tab straight away (only a whole press, down and up, on this tab).
                 setOnKeyListener { _, keyCode, event ->
                     if (!isConfirm(keyCode)) return@setOnKeyListener false
@@ -113,10 +115,11 @@ class TopBar(
         tabs.values.forEach { it.nextFocusDownId = view.id }
     }
 
-    /** Moves the highlight to this screen's tab. */
-    fun focusCurrent() {
-        tabs[current]?.requestFocus()
-    }
+    /**
+     * Moves the highlight to this screen's tab. Returns false when that isn't possible: on a
+     * touchscreen there is no highlight, so callers then do the normal thing (leave the screen).
+     */
+    fun focusCurrent(): Boolean = tabs[current]?.requestFocus() == true
 
     /** Coming from the screen below, only the current tab can take focus. */
     override fun addFocusables(views: ArrayList<View>, direction: Int, focusableMode: Int) {

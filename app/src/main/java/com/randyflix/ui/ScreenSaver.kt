@@ -276,7 +276,8 @@ abstract class TvActivity : FragmentActivity() {
                 return true
             }
             if (event.action == KeyEvent.ACTION_UP) {
-                if (backDown && !event.isCanceled) bar.focusCurrent()
+                // No highlight to move on a touchscreen: leave the screen as usual.
+                if (backDown && !event.isCanceled && !bar.focusCurrent()) onBackPressedDispatcher.onBackPressed()
                 backDown = false
                 return true
             }

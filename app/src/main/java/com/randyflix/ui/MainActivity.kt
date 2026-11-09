@@ -121,7 +121,8 @@ class MainActivity : TvActivity() {
                     if (topBar.hasFocus()) confirmExit()
                     else {
                         (supportFragmentManager.findFragmentById(R.id.container) as? MainFragment)?.scrollToTop()
-                        topBar.focusCurrent()
+                        // No highlight on a touchscreen: go straight to the exit question.
+                        if (!topBar.focusCurrent()) confirmExit()
                     }
                 }
                 backDown = false
