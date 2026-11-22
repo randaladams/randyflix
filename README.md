@@ -133,7 +133,7 @@ and keeps `catalog.bak.m3u` when it removes channels. Set it up once on the Pi w
 
 Set **Settings → Connection → Music folder** (share name, optionally /subfolder, e.g. `music`); blank
 turns music off. It's scanned with Refresh library: song details come from the files' tags, or
-from the folders when a file has none (`Artist\Album Title.mp3`). Album covers come from a
+from the folders when a file has none (`Artist\Album\01 Title.mp3`). Album covers come from a
 `cover`/`folder`/`front` .jpg or .png in the album folder, otherwise from the picture inside the
 music files. Formats: mp3, m4a/aac, flac, ogg/opus, wav (and wma/alac where the Firestick can).
 
