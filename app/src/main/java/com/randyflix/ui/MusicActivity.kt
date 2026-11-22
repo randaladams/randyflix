@@ -428,11 +428,15 @@ class MusicActivity : TvActivity() {
         }
     }
 
+    private fun hasMenu(row: Row) = row is Row.SongRow || row is Row.AlbumRow || row is Row.ArtistRow ||
+        row is Row.GenreRow || row is Row.PlaylistRow
+
     private fun songMenu(row: Row.SongRow) {
         val t = row.track
         val labels = ArrayList<String>()
         val actions = ArrayList<() -> Unit>()
         fun add(label: String, run: () -> Unit) { labels += label; actions += run }
+        MusicPlayer.controls().forEach { (label, run) -> add(label, run) }
         add("Play next") { MusicPlayer.playNext(listOf(t)); toast("Plays next: ${t.title}") }
         add("Add to queue") { MusicPlayer.addToQueue(listOf(t)); toast("Added to the queue") }
         add("Add to playlist…") { addToPlaylist(listOf(t)) }
@@ -450,6 +454,7 @@ class MusicActivity : TvActivity() {
         val labels = ArrayList<String>()
         val actions = ArrayList<() -> Unit>()
         fun add(label: String, run: () -> Unit) { labels += label; actions += run }
+        MusicPlayer.controls().forEach { (label, run) -> add(label, run) }
         add("Play") { MusicPlayer.play(tracks) }
         add("Shuffle") { MusicPlayer.play(tracks, shuffle = true) }
         add("Play next") { MusicPlayer.playNext(tracks); toast("${tracks.size} songs play next") }
@@ -523,8 +528,13 @@ class MusicActivity : TvActivity() {
                 return true
             } else if (backHandled) return true
         }
-        if (event.keyCode == KeyEvent.KEYCODE_MENU && list.hasFocus()) {
-            if (event.action == KeyEvent.ACTION_UP) focusedRow?.let { menu(it) }
+        if (event.keyCode == KeyEvent.KEYCODE_MENU && !screenSaverShowing()) {
+            // ☰ on a song, album, artist, genre or playlist: its menu (music controls first).
+            // Anywhere else on this screen: just the music controls.
+            if (event.action == KeyEvent.ACTION_UP) {
+                val row = focusedRow.takeIf { list.hasFocus() }
+                if (row != null && hasMenu(row)) menu(row) else MusicPlayer.showControls(this)
+            }
             return true
         }
         return super.dispatchKeyEvent(event)

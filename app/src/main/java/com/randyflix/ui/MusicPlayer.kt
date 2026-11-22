@@ -175,6 +175,24 @@ object MusicPlayer {
         else -> "Repeat: Off"
     }
 
+    /** Pause/Play, Next, Previous, Stop as menu lines (for the ☰ menus); empty when nothing's queued. */
+    fun controls(): List<Pair<String, () -> Unit>> = if (!isActive) emptyList() else listOf(
+        (if (isPlaying) "❚❚  Pause music" else "▶  Play music") to { toggle() },
+        "⏭  Next song" to { next() },
+        "⏮  Previous song" to { previous() },
+        "⏹  Stop music" to { stop() },
+    )
+
+    /** A ☰ menu with just the music controls. */
+    fun showControls(activity: android.app.Activity) {
+        val c = controls()
+        if (c.isEmpty()) return
+        android.app.AlertDialog.Builder(activity)
+            .setTitle(current.value?.let { "${it.title}  ·  ${it.artist}" } ?: "Music")
+            .setItems(c.map { it.first }.toTypedArray()) { _, i -> c[i].second() }
+            .show()
+    }
+
     val position: Long get() = player?.currentPosition ?: 0L
     val duration: Long get() = player?.duration?.takeIf { it > 0 } ?: (_current.value?.duration ?: 0L)
 

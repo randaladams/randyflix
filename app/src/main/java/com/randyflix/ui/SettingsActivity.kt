@@ -50,10 +50,14 @@ class SettingsActivity : TvActivity() {
         val version = packageManager.getPackageInfo(packageName, 0).versionName
         findViewById<TextView>(R.id.version).text = "RandyFlix $version"
         findViewById<TextView>(R.id.about_text).text =
-            "Plays the movie and TV library on ${Settings.host} over the network, plus Live TV and " +
+            "Plays the movie, TV and music library on ${Settings.host} over the network, plus Live TV and " +
                 "background pictures from the RandyFlix folder (${Settings.appFolder.ifBlank { "off" }}).\n\n" +
-                "Library: ${Library.data.movies.size} movies, ${Library.data.shows.size} TV shows" +
-                (if (MusicLibrary.isEnabled) ", ${MusicLibrary.data.tracks.size} songs." else ".") +
+                "Movies and TV: ${Library.data.movies.size} movies, ${Library.data.shows.size} TV shows.\n" +
+                (if (MusicLibrary.isEnabled)
+                    "Music (${Settings.musicPath}): ${MusicLibrary.data.tracks.size} songs, ${MusicLibrary.albums().size} albums, " +
+                        "${MusicLibrary.artists().size} artists, ${MusicLibrary.playlists().size} playlists." +
+                        (MusicPlayer.current.value?.let { "\nNow playing: ${it.title} · ${it.artist}" + if (MusicPlayer.isPlaying) "" else " (paused)" } ?: "")
+                else "Music: off (set the Music folder under Connection).") +
                 (com.randyflix.CrashLog.lastSummary()?.let { "\n\nLast problem: $it  (details in crash-log.txt in the RandyFlix folder)" } ?: "")
 
         findViewById<Button>(R.id.save).setOnClickListener {

@@ -94,6 +94,7 @@
             <Button android:id="@+id/np_prev" style="@style/TvButton" android:text="⏮" />
             <Button android:id="@+id/np_play" style="@style/TvButton" android:minWidth="110dp" android:text="❚❚  Pause" />
             <Button android:id="@+id/np_next" style="@style/TvButton" android:text="⏭" />
+            <Button android:id="@+id/np_stop" style="@style/TvButton" android:text="⏹  Stop" />
             <Button android:id="@+id/np_shuffle" style="@style/TvButton" android:text="Shuffle: Off" />
             <Button android:id="@+id/np_repeat" style="@style/TvButton" android:text="Repeat: Off" />
         </LinearLayout>

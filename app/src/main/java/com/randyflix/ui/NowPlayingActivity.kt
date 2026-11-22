@@ -56,6 +56,8 @@ class NowPlayingActivity : TvActivity() {
 
         findViewById<Button>(R.id.np_prev).setOnClickListener { MusicPlayer.previous() }
         findViewById<Button>(R.id.np_next).setOnClickListener { MusicPlayer.next() }
+        // Stop clears the music; this screen then closes by itself.
+        findViewById<Button>(R.id.np_stop).setOnClickListener { MusicPlayer.stop() }
         play.setOnClickListener { MusicPlayer.toggle() }
         shuffle.setOnClickListener {
             MusicPlayer.shuffle = !MusicPlayer.shuffle
@@ -89,6 +91,14 @@ class NowPlayingActivity : TvActivity() {
     override fun onPause() {
         super.onPause()
         handler.removeCallbacks(tick)
+    }
+
+    override fun dispatchKeyEvent(event: android.view.KeyEvent): Boolean {
+        if (event.keyCode == android.view.KeyEvent.KEYCODE_MENU && !screenSaverShowing()) {
+            if (event.action == android.view.KeyEvent.ACTION_UP) MusicPlayer.showControls(this)
+            return true
+        }
+        return super.dispatchKeyEvent(event)
     }
 
     private fun showTrack(t: Track) {
