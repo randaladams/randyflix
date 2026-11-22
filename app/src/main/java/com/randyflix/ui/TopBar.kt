@@ -17,7 +17,7 @@ import com.randyflix.R
 
 /** The places in the top bar, left to right. */
 enum class Tab(val label: String) {
-    HOME("Home"), MOVIES("Movies"), SHOWS("TV Shows"), LIVE("Live TV"), SEARCH("Search"), SETTINGS("Settings")
+    HOME("Home"), MOVIES("Movies"), SHOWS("TV Shows"), MUSIC("Music"), LIVE("Live TV"), SEARCH("Search"), SETTINGS("Settings")
 }
 
 /**
@@ -59,10 +59,10 @@ class TopBar(
         for (tab in Tab.values()) {
             val view = TextView(activity).apply {
                 text = tab.label
-                textSize = 18f
+                textSize = 17f
                 setTextColor(ContextCompat.getColorStateList(activity, R.color.tab_text))
                 setBackgroundResource(R.drawable.tab_bg)
-                val h = Format.dp(activity, 16)
+                val h = Format.dp(activity, 13)
                 val v = Format.dp(activity, 6)
                 setPadding(h, v, h, v)
                 isFocusable = true
@@ -177,6 +177,7 @@ class TopBar(
             Tab.HOME -> null
             Tab.MOVIES -> GridActivity.intent(context, GridFragment.MODE_MOVIES, "Movies")
             Tab.SHOWS -> GridActivity.intent(context, GridFragment.MODE_SHOWS, "TV Shows")
+            Tab.MUSIC -> Intent(context, MusicActivity::class.java)
             Tab.LIVE -> Intent(context, GuideActivity::class.java)
             Tab.SEARCH -> Intent(context, SearchActivity::class.java)
             Tab.SETTINGS -> Intent(context, SettingsActivity::class.java)

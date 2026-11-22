@@ -15,6 +15,7 @@ import com.randyflix.data.Library
 import com.randyflix.data.LiveTv
 import com.randyflix.data.Backgrounds
 import com.randyflix.data.M3u
+import com.randyflix.data.MusicLibrary
 import com.randyflix.data.ScanState
 import com.randyflix.data.Scanner
 import com.randyflix.smb.Smb
@@ -36,11 +37,13 @@ class SettingsActivity : TvActivity() {
         val host = findViewById<EditText>(R.id.host)
         val movies = findViewById<EditText>(R.id.movies)
         val tv = findViewById<EditText>(R.id.tv)
+        val music = findViewById<EditText>(R.id.music)
         val appFolder = findViewById<EditText>(R.id.app_folder)
 
         host.setText(Settings.host)
         movies.setText(Settings.moviesPath)
         tv.setText(Settings.tvPath)
+        music.setText(Settings.musicPath)
         appFolder.setText(Settings.appFolder)
 
         @Suppress("DEPRECATION")
@@ -49,7 +52,8 @@ class SettingsActivity : TvActivity() {
         findViewById<TextView>(R.id.about_text).text =
             "Plays the movie and TV library on ${Settings.host} over the network, plus Live TV and " +
                 "background pictures from the RandyFlix folder (${Settings.appFolder.ifBlank { "off" }}).\n\n" +
-                "Library: ${Library.data.movies.size} movies, ${Library.data.shows.size} TV shows."
+                "Library: ${Library.data.movies.size} movies, ${Library.data.shows.size} TV shows" +
+                (if (MusicLibrary.isEnabled) ", ${MusicLibrary.data.tracks.size} songs." else ".")
 
         findViewById<Button>(R.id.save).setOnClickListener {
             // The app folder (playlist, backgrounds) isn't part of the library index, so changing it needs no full rescan.
@@ -59,6 +63,7 @@ class SettingsActivity : TvActivity() {
             Settings.host = host.text.toString()
             Settings.moviesPath = movies.text.toString()
             Settings.tvPath = tv.text.toString()
+            Settings.musicPath = music.text.toString()   // a new music folder is scanned from scratch by itself
             Settings.appFolder = appFolder.text.toString()
             testConnection(scanAfter = true, full = pathsChanged)
         }
@@ -126,6 +131,16 @@ class SettingsActivity : TvActivity() {
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    MusicLibrary.state.collect { s ->
+                        when (s) {
+                            is ScanState.Running -> status.text = s.message
+                            is ScanState.Done -> status.text = "Music updated: ${s.message}"
+                            is ScanState.Failed -> status.text = "Problem:\n${s.message}"
+                            ScanState.Idle -> {}
+                        }
+                    }
+                }
                 Library.state.collect { s ->
                     when (s) {
                         is ScanState.Running -> status.text = "Scanning… ${s.message}"
@@ -157,7 +172,7 @@ class SettingsActivity : TvActivity() {
         // A text field uses Left/Right to move its cursor, so Left could take many presses to
         // get out of it. Left always goes back to the section list instead (the keyboard that
         // opens on Select is where the text is edited).
-        for (field in listOf(host, movies, tv, appFolder)) {
+        for (field in listOf(host, movies, tv, music, appFolder)) {
             field.setOnKeyListener { _, keyCode, event ->
                 if (keyCode == android.view.KeyEvent.KEYCODE_DPAD_LEFT) {
                     if (event.action == android.view.KeyEvent.ACTION_DOWN) findViewById<View>(R.id.nav_connection).requestFocus()
@@ -228,6 +243,15 @@ class SettingsActivity : TvActivity() {
                             "✓ $label ($path): $n folders"
                         } catch (e: Exception) {
                             "✗ $label ($path): ${Scanner.describe(e)}"
+                        }
+                    }
+                    // Music is optional: a problem with it doesn't stop the movie and TV scan.
+                    Settings.musicPath.takeIf { it.isNotBlank() }?.let { path ->
+                        lines += try {
+                            val n = Smb.list(path).count { it.isDir }
+                            "✓ Music ($path): $n folders"
+                        } catch (e: Exception) {
+                            "⚠ Music ($path): ${Scanner.describe(e)}"
                         }
                     }
                     // A missing playlist only turns Live TV off, so it doesn't stop the library scan.

@@ -38,6 +38,9 @@ import com.randyflix.smb.SmbDataSource
  */
 @OptIn(UnstableApi::class)
 class PlayerActivity : TvActivity() {
+    // Media buttons control the video here, not the music.
+    override val musicKeys = false
+
     // Screen saver only while paused (and not while the ☰ panel is open). The player keeps the screen on itself.
     override fun saverAllowed() = player?.playWhenReady == false && !menu.isOpen
     override val saverHoldsScreenOn = false

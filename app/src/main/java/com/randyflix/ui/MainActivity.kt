@@ -83,6 +83,11 @@ class MainActivity : TvActivity() {
         else if (tab == Tab.HOME && focusBar) topBar.postDelayed({ topBar.focusCurrent() }, 150)
     }
 
+    override fun onDestroy() {
+        if (isFinishing) MusicPlayer.stop()   // leaving RandyFlix ends the music
+        super.onDestroy()
+    }
+
     /** "Exit RandyFlix?" with Yes selected; pressing Back again also exits. */
     private fun confirmExit() {
         val dialog = AlertDialog.Builder(this)

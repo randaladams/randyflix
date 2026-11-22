@@ -71,7 +71,11 @@ object ImageLoader {
         val cached = File(dir, md5(key) + ".jpg")
         if (cached.exists()) BitmapFactory.decodeFile(cached.path)?.let { return it }
 
-        val bytes = if (isWeb(source)) download(source) else Smb.readBytes(source)
+        val bytes = when {
+            isWeb(source) -> download(source)
+            source.startsWith("/") -> File(source).readBytes()   // a cover saved on the Firestick
+            else -> Smb.readBytes(source)
+        }
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
         if (bounds.outWidth <= 0) return null

@@ -92,6 +92,8 @@
                     <EditText android:id="@+id/movies" style="@style/Field" android:hint="movies" />
                     <TextView style="@style/FieldLabel" android:text="TV shows folder" />
                     <EditText android:id="@+id/tv" style="@style/Field" android:hint="tv" />
+                    <TextView style="@style/FieldLabel" android:text="Music folder (share name, optionally /subfolder; blank = no music)" />
+                    <EditText android:id="@+id/music" style="@style/Field" android:hint="music" />
                     <TextView style="@style/FieldLabel" android:text="RandyFlix folder (channels.m3u and backgrounds/; blank = off)" />
                     <EditText android:id="@+id/app_folder" style="@style/Field" android:hint="movies/_randyflix" />
                     <Button android:id="@+id/save" style="@style/TvButton" android:layout_marginTop="20dp" android:text="Save and test connection" />

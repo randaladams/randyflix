@@ -40,6 +40,9 @@
         <activity android:name=".ui.MovieActivity" android:exported="false" />
         <activity android:name=".ui.ShowActivity" android:exported="false" />
         <activity android:name=".ui.GuideActivity" android:exported="false" />
+        <activity android:name=".ui.MusicActivity" android:exported="false"
+            android:windowSoftInputMode="stateAlwaysHidden|adjustNothing" />
+        <activity android:name=".ui.NowPlayingActivity" android:exported="false" />
         <activity android:name=".ui.SettingsActivity" android:exported="false"
             android:windowSoftInputMode="stateAlwaysHidden|adjustResize" />
         <activity

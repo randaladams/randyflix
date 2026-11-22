@@ -40,6 +40,17 @@ class ScreenSaver(
     private val images = arrayOf(newImage(), newImage())
     private var front = 0
     private val clock = ClockView(activity).apply { setBackgroundColor(Color.TRANSPARENT); textSize = 22f }
+    /** Song and artist under the cover while music plays. */
+    private val songInfo = android.widget.TextView(activity).apply {
+        setTextColor(Color.WHITE)
+        textSize = 20f
+        gravity = Gravity.CENTER
+        setShadowLayer(8f, 0f, 2f, Color.BLACK)
+        visibility = View.GONE
+    }
+    /** What's on screen: "music:<song>" for a cover, "picture" for the slideshow. */
+    private var shownKey: String? = null
+    private var lastPictureAt = 0L
     private var lastInput = SystemClock.uptimeMillis()
     private var shownAt = 0L
     private var pictureIndex = 0
@@ -52,6 +63,8 @@ class ScreenSaver(
         val match = ViewGroup.LayoutParams.MATCH_PARENT
         images.forEach { root.addView(it, FrameLayout.LayoutParams(match, match)) }
         root.addView(clock, FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.TOP or Gravity.START))
+        root.addView(songInfo, FrameLayout.LayoutParams(match, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM)
+            .apply { bottomMargin = Format.dp(activity, 40) })
         activity.findViewById<ViewGroup>(android.R.id.content).addView(root, FrameLayout.LayoutParams(match, match))
     }
 
@@ -72,11 +85,39 @@ class ScreenSaver(
         }
     }
 
+    /**
+     * Every few seconds: while music is playing, the current song's cover (changing with the
+     * song); otherwise the background slideshow, a new picture every [PICTURE_MS].
+     */
     private val nextPicture = object : Runnable {
         override fun run() {
-            showPicture(pictureIndex + 1)
-            handler.postDelayed(this, PICTURE_MS)
+            update()
+            handler.postDelayed(this, TICK_MS)
         }
+    }
+
+    private fun update() {
+        val song = MusicPlayer.current.value
+        if (MusicPlayer.isPlaying && song != null) {
+            if (shownKey != "music:" + song.id) showCover(song)
+        } else if (shownKey != "picture" || SystemClock.uptimeMillis() - lastPictureAt >= PICTURE_MS) {
+            songInfo.visibility = View.GONE
+            showPicture(pictureIndex + 1)
+        }
+    }
+
+    /** The song's cover, whole and centred, with the song and artist underneath. */
+    private fun showCover(song: com.randyflix.data.Track) {
+        shownKey = "music:" + song.id
+        val back = images[1 - front]
+        val old = images[front]
+        back.scaleType = ImageView.ScaleType.FIT_CENTER
+        val pad = Format.dp(activity, 60)
+        back.setPadding(pad, pad, pad, pad * 2)
+        ImageLoader.load(back, song.art, 720, placeholder = com.randyflix.R.drawable.ic_music)
+        songInfo.text = "${song.title}\n${song.artist}  ·  ${song.album}"
+        songInfo.visibility = View.VISIBLE
+        crossFade(back, old)
     }
 
     private val moveClock = object : Runnable {
@@ -146,10 +187,10 @@ class ScreenSaver(
         root.post { placeClock() }
         // Start from today's menu background and step through the rest.
         pictureIndex = (Backgrounds.today.value?.let { list.indexOf(it) } ?: 0).coerceAtLeast(0) - 1
-        if (list.isNotEmpty()) {
-            showPicture(pictureIndex + 1)
-            handler.postDelayed(nextPicture, PICTURE_MS)
-        }
+        shownKey = null
+        lastPictureAt = 0L
+        update()
+        handler.postDelayed(nextPicture, TICK_MS)
         handler.postDelayed(moveClock, CLOCK_MOVE_MS)
     }
 
@@ -159,18 +200,29 @@ class ScreenSaver(
         if (!isShowing) return
         root.visibility = View.GONE
         images.forEach { ImageLoader.cancel(it); it.animate().cancel(); it.setImageDrawable(null); it.alpha = 0f }
+        songInfo.visibility = View.GONE
+        shownKey = null
         lastInput = SystemClock.uptimeMillis()
     }
 
     /** Loads the next picture behind the current one, then cross-fades to it. */
     private fun showPicture(index: Int) {
         val list = Backgrounds.all()
+        shownKey = "picture"
+        lastPictureAt = SystemClock.uptimeMillis()
         if (list.isEmpty()) return
         pictureIndex = Math.floorMod(index, list.size)
         val back = images[1 - front]
         val old = images[front]
+        back.scaleType = ImageView.ScaleType.CENTER_CROP
+        back.setPadding(0, 0, 0, 0)
         ImageLoader.load(back, list[pictureIndex], 1280, 0)
+        crossFade(back, old)
+    }
+
+    private fun crossFade(back: ImageView, old: ImageView) {
         back.bringToFront()
+        songInfo.bringToFront()
         clock.bringToFront()
         back.animate().cancel()
         back.alpha = 0f
@@ -194,6 +246,7 @@ class ScreenSaver(
     companion object {
         private const val CHECK_MS = 5_000L
         private const val PICTURE_MS = 20_000L
+        private const val TICK_MS = 4_000L
         private const val CLOCK_MOVE_MS = 60_000L
         private const val MAX_RUN_MS = 2 * 60 * 60_000L   // then let the Fire TV sleep as usual
     }
@@ -267,8 +320,24 @@ abstract class TvActivity : FragmentActivity() {
         backBar = bar
     }
 
+    /** The remote's play/pause, rewind and fast-forward control the music here (not in the video player). */
+    protected open val musicKeys: Boolean = true
+
+    private fun musicKey(event: KeyEvent): Boolean {
+        if (!musicKeys || !MusicPlayer.isActive) return false
+        val run: (() -> Unit) = when (event.keyCode) {
+            KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, KeyEvent.KEYCODE_MEDIA_PLAY, KeyEvent.KEYCODE_MEDIA_PAUSE -> { { MusicPlayer.toggle() } }
+            KeyEvent.KEYCODE_MEDIA_FAST_FORWARD, KeyEvent.KEYCODE_MEDIA_NEXT -> { { MusicPlayer.next() } }
+            KeyEvent.KEYCODE_MEDIA_REWIND, KeyEvent.KEYCODE_MEDIA_PREVIOUS -> { { MusicPlayer.previous() } }
+            else -> return false
+        }
+        if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) run()
+        return true
+    }
+
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         if (saverKey(event)) return true
+        if (musicKey(event)) return true
         val bar = backBar
         if (bar != null && event.keyCode == KeyEvent.KEYCODE_BACK && !bar.hasFocus()) {
             if (event.action == KeyEvent.ACTION_DOWN) {

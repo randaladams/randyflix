@@ -36,6 +36,11 @@ object Settings {
      * The app's own folder on the share, holding channels.m3u (Live TV) and backgrounds/
      * (menu background images). Blank turns both off.
      */
+    /** Music folder (share name, optionally /subfolder). Blank = no music. */
+    var musicPath: String
+        get() = str("music", "")
+        set(v) = put("music", v.trim('/', '\\', ' ').replace('\\', '/'))
+
     var appFolder: String
         get() = str("appfolder", "movies/_randyflix")
         set(v) = put("appfolder", v.trim('/', '\\', ' ').replace('\\', '/'))
