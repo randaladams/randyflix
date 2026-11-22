@@ -120,7 +120,7 @@ com/randyflix/
    - Player clock only while paused. ☰ → Picture (`PictureSize.kt`): Normal / Stretch 16:9 / Wide zoom / Zoom, remembered per movie, show or channel (`picture:<key>` in settings prefs). Screen-shaped (16:9) video is treated as 4:3 with built-in bars. After a change the video surface is rebuilt (hardware layer may keep its first size). Nonlinear stretch not done.
    - App icon (`mipmap-*/ic_launcher.png`) and banner (`drawable-xhdpi|xxhdpi/banner.png`) from Randy's R tile.
    - GitHub Actions on v5/v6 (Node 24).
-   - Pi: `pi/check_catalog.py` + `pi/install.sh`, copied to `\adamsnas\MOVIES\_randyflix	ools\`, cron Sundays 4:30 AM as user randy (share path on the Pi: `/media/storage`). Removes a channel after 2 failed weekly checks (each with one retry), skips everything if half fail; writes `_randyflix/catalog-report.txt` and `tools/check_catalog.log`.
+   - Pi: `pi/check_catalog.py` + `pi/install.sh`, copied to `\\adamsnas\MOVIES\_randyflix\tools\`, cron Sundays 4:30 AM as user randy (share path on the Pi: `/media/storage`). Removes a channel after 2 failed weekly checks (each with one retry), skips everything if half fail; writes `_randyflix/catalog-report.txt` and `tools/check_catalog.log`.
    - Phone: shelved. Works on a phone with the Pi's IP as the server (phones can't resolve `adamsnas`); ☰ menus and layout are still TV-only.
 
 ## 8. Moving to a new machine
