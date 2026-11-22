@@ -10,6 +10,7 @@ import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewTreeObserver
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.Button
@@ -159,7 +160,11 @@ class MusicActivity : TvActivity() {
                 isAllCaps = false
                 id = View.generateViewId()
                 layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-                setOnFocusChangeListener { _, has -> if (has && (k != section || stack.size > 1)) showSection(k) }
+                // Run just after, not during: Android can move the highlight here in the middle of
+                // the list redrawing itself, and redrawing it again right then crashes.
+                setOnFocusChangeListener { v, has ->
+                    if (has) v.post { if (v.hasFocus() && (k != section || stack.size > 1)) showSection(k) }
+                }
                 setOnClickListener {
                     if (k == NOW) startActivity(Intent(this@MusicActivity, NowPlayingActivity::class.java))
                     else if (k == SEARCH) query.requestFocus()
@@ -254,33 +259,60 @@ class MusicActivity : TvActivity() {
     private fun push(p: Page) {
         stack.lastOrNull()?.focus = currentRowIndex()
         stack += p
-        render(keepFocus = false)
-        focusList(0)
+        val had = list.hasFocus()
+        render(keepFocus = false, focusTo = 0)
+        if (!had) focusList(0)
     }
 
     private fun pop() {
         if (stack.size <= 1) return
         stack.removeAt(stack.size - 1)
-        render(keepFocus = false)
-        focusList(stack.last().focus)
+        val had = list.hasFocus()
+        val at = stack.last().focus
+        render(keepFocus = false, focusTo = at)
+        if (!had) focusList(at)
     }
 
     // ---- drawing
 
-    private fun render(keepFocus: Boolean) {
+    /**
+     * Redraws the list. If the highlight is in it, it's parked on the list itself while the rows
+     * are replaced (otherwise Android hands it to the first section button), then put back on
+     * row [focusTo] — or the same row, with [keepFocus] — once the new rows are laid out.
+     */
+    private fun render(keepFocus: Boolean, focusTo: Int? = null) {
         val page = stack.lastOrNull() ?: return
         val hadFocus = list.hasFocus()
-        val at = if (keepFocus) currentRowIndex() else -1
+        val target = focusTo ?: if (keepFocus) currentRowIndex() else 0
         showAlbumInRows = true
         val rows = if (MusicLibrary.isEnabled) page.build() else emptyList()
         pageTitle.text = page.title()
         pageInfo.text = page.info()
         query.visibility = if (page.search) View.VISIBLE else View.GONE
+        val hasRows = rows.any { it !is Row.Header }
+        if (hadFocus) {
+            list.descendantFocusability = ViewGroup.FOCUS_BEFORE_DESCENDANTS
+            list.isFocusable = true
+            list.requestFocus()
+        }
         adapter.submit(rows)
-        list.isFocusable = rows.any { it !is Row.Header }
         empty.text = emptyMessage(page)
         empty.visibility = if (rows.isEmpty()) View.VISIBLE else View.GONE
-        if (keepFocus && hadFocus && at >= 0) focusList(at)
+        if (!hadFocus) {
+            list.isFocusable = hasRows
+            return
+        }
+        list.viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
+            override fun onGlobalLayout() {
+                list.viewTreeObserver.removeOnGlobalLayoutListener(this)
+                list.descendantFocusability = ViewGroup.FOCUS_AFTER_DESCENDANTS
+                if (hasRows) focusList(target)
+                else {
+                    list.isFocusable = false
+                    sectionButtons[section]?.requestFocus()
+                }
+            }
+        })
     }
 
     private fun emptyMessage(page: Page): String {

@@ -151,7 +151,9 @@ class GuideActivity : TvActivity() {
                 id = View.generateViewId()
                 layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
                     .apply { bottomMargin = Format.dp(this@GuideActivity, 6) }
-                setOnFocusChangeListener { _, has -> if (has) showList(k) }
+                // Run just after, not during: Android can move the highlight here while the
+                // channel list is redrawing itself, and redrawing it again right then crashes.
+                setOnFocusChangeListener { v, has -> if (has) v.post { if (v.hasFocus()) showList(k) } }
                 setOnClickListener {
                     showList(k)
                     recycler.post { recycler.getChildAt(0)?.requestFocus() }
