@@ -122,6 +122,7 @@ com/randyflix/
    - GitHub Actions on v5/v6 (Node 24).
    - Pi: `pi/check_catalog.py` + `pi/install.sh`, copied to `\\adamsnas\MOVIES\_randyflix\tools\`, cron Sundays 4:30 AM as user randy (share path on the Pi: `/media/storage`). Removes a channel after 2 failed weekly checks (each with one retry), skips everything if half fail; writes `_randyflix/catalog-report.txt` and `tools/check_catalog.log`.
    - Phone: shelved. Works on a phone with the Pi's IP as the server (phones can't resolve `adamsnas`); ☰ menus and layout are still TV-only.
+10. **Music** (build 38, 2026-11-22; not tested — no music folder on the NAS yet): `data/Music.kt` (Track/Album/Artist/Genre/MusicPlaylist, `MusicLibrary` index in `music.json`, `MusicScanner`: tags via MediaMetadataRetriever + `SmbMediaSource` (API 23+), folder fallbacks, folders reused when names+sizes match, covers from folder images or embedded art saved to `filesDir/music_art`, .m3u playlists resolved relative or by path tail; custom playlists in the `music` prefs). `ui/MusicPlayer.kt` app-wide ExoPlayer (audio focus → pauses for video; paused when the app leaves the foreground, stopped on exit). `ui/MusicActivity.kt` (Music tab, page stack, ☰ dialogs), `ui/NowPlayingActivity.kt`. Settings → Connection `musicPath` (blank = off). Screen saver shows the cover while music plays (`ScreenSaver.update`). Media keys handled in `TvActivity` (`musicKeys`, off in PlayerActivity). Top bar now has 7 tabs (Music between TV Shows and Live TV).
 
 ## 8. Moving to a new machine
 

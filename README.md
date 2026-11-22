@@ -129,3 +129,20 @@ assumes the internet was down and changes nothing. It writes `_randyflix/catalog
 and keeps `catalog.bak.m3u` when it removes channels. Set it up once on the Pi with
 `sh <share path>/_randyflix/tools/install.sh` (Sundays 4:30 AM via cron; `--remove` undoes it).
 
+## Music
+
+Set **Settings → Connection → Music folder** (share name, optionally /subfolder, e.g. `music`); blank
+turns music off. It's scanned with Refresh library: song details come from the files' tags, or
+from the folders when a file has none (`Artist\Album Title.mp3`). Album covers come from a
+`cover`/`folder`/`front` .jpg or .png in the album folder, otherwise from the picture inside the
+music files. Formats: mp3, m4a/aac, flac, ogg/opus, wav (and wma/alac where the Firestick can).
+
+- **Music tab:** Now playing, Search, Playlists, Artists, Albums, Genres, Songs (sort by title,
+  artist, album or genre). Select plays or opens; Back goes up a level. ☰ on a row: Play next,
+  Add to queue, Add to playlist…, Go to album / artist; on your playlists also Rename / Delete.
+- **Playlists:** .m3u/.m3u8 files anywhere in the music folder (read-only), plus your own, made
+  with the remote and stored on the Firestick.
+- **Playing:** music keeps going while you browse, pauses when a movie, show or live channel
+  starts and when you leave RandyFlix. The remote's play/pause, rewind and fast-forward control it
+  on every menu screen. While music plays, the screen saver shows the song's cover.
+
