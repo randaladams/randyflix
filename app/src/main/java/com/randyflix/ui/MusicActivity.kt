@@ -110,7 +110,20 @@ class MusicActivity : TvActivity() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch { MusicLibrary.version.collect { render(keepFocus = true) } }
-                launch { MusicLibrary.state.collect { render(keepFocus = true) } }
+                launch {
+                    // Progress messages arrive several times a second; only the "reading your
+                    // music" message on an empty list needs them. New songs come via version.
+                    var lastKind: Class<*>? = null
+                    MusicLibrary.state.collect { s ->
+                        val kind = s.javaClass
+                        val empty = MusicLibrary.data.tracks.isEmpty()
+                        if (kind != lastKind || (empty && s is ScanState.Running)) {
+                            lastKind = kind
+                            if (empty) render(keepFocus = true)
+                            else pageInfo.text = stack.lastOrNull()?.info?.invoke() ?: ""
+                        }
+                    }
+                }
                 launch { MusicPlayer.current.collect { buildSections(); updateStrip(); if (section == NOW) render(keepFocus = true) } }
                 launch { MusicPlayer.playing.collect { updateStrip() } }
             }
