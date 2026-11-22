@@ -53,7 +53,8 @@ class SettingsActivity : TvActivity() {
             "Plays the movie and TV library on ${Settings.host} over the network, plus Live TV and " +
                 "background pictures from the RandyFlix folder (${Settings.appFolder.ifBlank { "off" }}).\n\n" +
                 "Library: ${Library.data.movies.size} movies, ${Library.data.shows.size} TV shows" +
-                (if (MusicLibrary.isEnabled) ", ${MusicLibrary.data.tracks.size} songs." else ".")
+                (if (MusicLibrary.isEnabled) ", ${MusicLibrary.data.tracks.size} songs." else ".") +
+                (com.randyflix.CrashLog.lastSummary()?.let { "\n\nLast problem: $it  (details in crash-log.txt in the RandyFlix folder)" } ?: "")
 
         findViewById<Button>(R.id.save).setOnClickListener {
             // The app folder (playlist, backgrounds) isn't part of the library index, so changing it needs no full rescan.

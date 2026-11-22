@@ -156,6 +156,19 @@ object Smb {
         )
     }
 
+    /** Creates or replaces a file on the share (used for the crash log). */
+    fun writeBytes(path: String, bytes: ByteArray) = retry {
+        val (shareName, sub) = split(path)
+        share(shareName).openFile(
+            sub,
+            EnumSet.of(AccessMask.GENERIC_WRITE),
+            EnumSet.of(FileAttributes.FILE_ATTRIBUTE_NORMAL),
+            SMB2ShareAccess.ALL,
+            SMB2CreateDisposition.FILE_OVERWRITE_IF,
+            EnumSet.noneOf(SMB2CreateOptions::class.java),
+        ).use { it.write(bytes, 0L) }
+    }
+
     fun readBytes(path: String): ByteArray = open(path).use { f ->
         f.inputStream.use { it.readBytes() }
     }

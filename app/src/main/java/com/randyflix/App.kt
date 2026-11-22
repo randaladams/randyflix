@@ -14,6 +14,7 @@ class App : Application() {
     override fun onCreate() {
         super.onCreate()
         Settings.init(this)
+        CrashLog.install(this)
         Playback.init(this)
         Library.load(this)
         LiveTv.load(this)
@@ -30,7 +31,7 @@ class App : Application() {
                 if (started <= 0 && !a.isChangingConfigurations) MusicPlayer.pause()
             }
             override fun onActivityCreated(a: Activity, b: Bundle?) {}
-            override fun onActivityResumed(a: Activity) {}
+            override fun onActivityResumed(a: Activity) { CrashLog.screen = a.javaClass.simpleName }
             override fun onActivityPaused(a: Activity) {}
             override fun onActivitySaveInstanceState(a: Activity, b: Bundle) {}
             override fun onActivityDestroyed(a: Activity) {}
