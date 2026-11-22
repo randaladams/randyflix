@@ -76,6 +76,8 @@ object MusicLibrary {
     private lateinit var artDir: File
     private lateinit var prefs: SharedPreferences
     private var job: Job? = null
+    /** Reading music.json at start-up; a scan waits for it (it needs last time's songs). */
+    private var loadJob: Job? = null
 
     @Volatile var data = MusicData("", emptyList(), emptyList(), 0L)
         private set
@@ -96,7 +98,15 @@ object MusicLibrary {
         file = File(context.filesDir, "music.json")
         artDir = File(context.filesDir, "music_art").apply { mkdirs() }
         prefs = context.getSharedPreferences("music", Context.MODE_PRIVATE)
-        if (file.exists()) runCatching { publish(MusicJson.decode(file.readText())) }
+        // In the background: with thousands of songs, reading and sorting them would hold up
+        // the app's start long enough for Fire OS to give up on it.
+        if (file.exists()) loadJob = scope.launch {
+            try {
+                publish(MusicJson.decode(file.readText()))
+            } catch (e: Throwable) {
+                file.delete()   // unreadable: the next scan rebuilds it
+            }
+        }
     }
 
     val isEnabled: Boolean get() = Settings.musicPath.isNotBlank()
@@ -112,6 +122,7 @@ object MusicLibrary {
         }
         job = scope.launch {
             _state.value = ScanState.Running("Music: connecting…")
+            loadJob?.join()
             try {
                 val old = if (data.root == root && !full) data else MusicData(root, emptyList(), emptyList(), 0L)
                 val result = MusicScanner(root, old, artDir,
@@ -146,6 +157,7 @@ object MusicLibrary {
         val byGenre = HashMap<String, MutableList<Track>>()
         for (t in d.tracks) for (g in t.genres) byGenre.getOrPut(g) { ArrayList() } += t
         genreList = byGenre.map { (g, tracks) -> Genre(g, tracks.sortedWith(albumOrder)) }.sortedBy { sortKey(it.name) }
+        sortedSongs.clear()
         data = d
         _version.update { it + 1 }
     }
@@ -172,11 +184,16 @@ object MusicLibrary {
         get() = SongSort.values().firstOrNull { it.name == prefs.getString("sort", null) } ?: SongSort.ARTIST
         set(v) = prefs.edit().putString("sort", v.name).apply()
 
-    fun songs(sort: SongSort = songSort): List<Track> = when (sort) {
-        SongSort.TITLE -> data.tracks.sortedBy { sortKey(it.title) }
-        SongSort.ARTIST -> data.tracks.sortedWith(albumOrder)
-        SongSort.ALBUM -> data.tracks.sortedWith(compareBy({ sortKey(it.album) }, { it.disc }, { it.track }))
-        SongSort.GENRE -> data.tracks.sortedWith(compareBy<Track>({ sortKey(it.genres.firstOrNull() ?: "~") }).then(albumOrder))
+    /** Each order is worked out once per scan, not every time the list is shown. */
+    private val sortedSongs = java.util.concurrent.ConcurrentHashMap<SongSort, List<Track>>()
+
+    fun songs(sort: SongSort = songSort): List<Track> = sortedSongs.getOrPut(sort) {
+        when (sort) {
+            SongSort.TITLE -> data.tracks.sortedBy { sortKey(it.title) }
+            SongSort.ARTIST -> data.tracks.sortedWith(albumOrder)
+            SongSort.ALBUM -> data.tracks.sortedWith(compareBy({ sortKey(it.album) }, { it.disc }, { it.track }))
+            SongSort.GENRE -> data.tracks.sortedWith(compareBy<Track>({ sortKey(it.genres.firstOrNull() ?: "~") }).then(albumOrder))
+        }
     }
 
     class SearchResult(val artists: List<Artist>, val albums: List<Album>, val songs: List<Track>)
@@ -185,9 +202,9 @@ object MusicLibrary {
         val q = normalize(query.trim())
         if (q.isEmpty()) return SearchResult(emptyList(), emptyList(), emptyList())
         return SearchResult(
-            artistList.filter { normalize(it.name).contains(q) },
-            albumList.filter { normalize(it.title).contains(q) || normalize(it.artist).contains(q) },
-            data.tracks.filter { normalize(it.title).contains(q) }.sortedWith(albumOrder),
+            artistList.filter { plain(it.name).contains(q) },
+            albumList.filter { plain(it.title).contains(q) || plain(it.artist).contains(q) },
+            data.tracks.filter { plain(it.title).contains(q) }.sortedWith(albumOrder),
         )
     }
 
@@ -244,11 +261,19 @@ object MusicLibrary {
 
     // ---- helpers
 
-    /** "The Beatles" files under B. */
-    fun sortKey(s: String): String = normalize(s).removePrefix("the ").removePrefix("a ").trim()
+    // Each name is cleaned up once and remembered: sorting 10,000 songs compares names hundreds
+    // of thousands of times, and redoing the clean-up each time made start-up far too slow.
+    private val plainCache = java.util.concurrent.ConcurrentHashMap<String, String>()
+    private val sortCache = java.util.concurrent.ConcurrentHashMap<String, String>()
+    private val MARKS = Regex("\\p{M}+")
 
-    private fun normalize(s: String) =
-        Normalizer.normalize(s, Normalizer.Form.NFD).replace(Regex("\\p{M}+"), "").lowercase()
+    /** "The Beatles" files under B. */
+    fun sortKey(s: String): String = sortCache.getOrPut(s) { plain(s).removePrefix("the ").removePrefix("a ").trim() }
+
+    /** Lower case, accents removed: "Beyoncé" → "beyonce". */
+    private fun plain(s: String): String = plainCache.getOrPut(s) { normalize(s) }
+
+    private fun normalize(s: String) = Normalizer.normalize(s, Normalizer.Form.NFD).replace(MARKS, "").lowercase()
 }
 
 // ---------------------------------------------------------------- JSON
